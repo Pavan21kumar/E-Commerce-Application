@@ -11,7 +11,7 @@ const Headers = () => {
         <div className='  h-16 w-4/5  border-solid bg-white flex items-center justify-evenly'>
           <div className='  w-fit'>
             
-          <Link  to='/home'><img  className=' ml-20 h-10'  src="/src/Images/Flip_Logo.png" alt="" title='FlipKart'/></Link>  
+          <Link  to='/'><img  className=' ml-20 h-10'  src="/src/Images/Flip_Logo.png" alt="" title='FlipKart'/></Link>  
 
           </div>
           <div className='w-4/5'>
@@ -76,7 +76,7 @@ const Headers = () => {
 export default Headers
 
 
-{/* <div>
+{/** <div>
 
 </div>
 <div className='flex item-center justify-around'>
