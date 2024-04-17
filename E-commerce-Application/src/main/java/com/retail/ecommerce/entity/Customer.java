@@ -1,5 +1,8 @@
 package com.retail.ecommerce.entity;
 
-public class Customer extends User{
+import jakarta.persistence.Entity;
+
+@Entity
+public class Customer extends User {
 
 }
