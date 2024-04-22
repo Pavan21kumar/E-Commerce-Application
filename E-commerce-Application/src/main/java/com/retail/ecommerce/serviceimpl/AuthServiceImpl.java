@@ -5,6 +5,8 @@ import java.util.Random;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.retail.ecommerce.cache.CacheStore;
@@ -12,23 +14,27 @@ import com.retail.ecommerce.entity.Customer;
 import com.retail.ecommerce.entity.Seller;
 import com.retail.ecommerce.entity.User;
 import com.retail.ecommerce.enums.UserRole;
+import com.retail.ecommerce.exception.EmailAllreadyPresentException;
+import com.retail.ecommerce.exception.InvalidEmailException;
+import com.retail.ecommerce.exception.InvalidOTPException;
+import com.retail.ecommerce.exception.InvalidPasswordException;
+import com.retail.ecommerce.exception.OtpExpaireException;
+import com.retail.ecommerce.exception.RegistrationSessionExpaireException;
+import com.retail.ecommerce.exception.RoleNotSpecifyException;
+import com.retail.ecommerce.jwt.JwtService;
 import com.retail.ecommerce.mailservice.MailService;
 import com.retail.ecommerce.mailservice.MessageModel;
 import com.retail.ecommerce.repository.UserRegisterRepoository;
+import com.retail.ecommerce.requestdto.UserLoginRequest;
 import com.retail.ecommerce.requestdto.UserRequest;
 import com.retail.ecommerce.responsedto.OtpRequest;
 import com.retail.ecommerce.responsedto.UserResponse;
 import com.retail.ecommerce.service.AuthService;
-import com.retail.ecommerce.util.EmailAllreadyPresentException;
-import com.retail.ecommerce.util.InvalidEmailException;
-import com.retail.ecommerce.util.InvalidOTPException;
-import com.retail.ecommerce.util.OtpExpaireException;
-import com.retail.ecommerce.util.RegistrationSessionExpaireException;
 import com.retail.ecommerce.util.ResponseStructure;
-import com.retail.ecommerce.util.RoleNotSpecifyException;
 import com.retail.ecommerce.util.SimpleResponseStructure;
 
 import jakarta.mail.MessagingException;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -41,6 +47,8 @@ public class AuthServiceImpl implements AuthService {
 	private ResponseStructure<UserResponse> responseStructure;
 	private SimpleResponseStructure otpStructure;
 	private MailService mailService;
+	private PasswordEncoder encoder;
+	private JwtService jwtservice;
 
 	@Override
 	public ResponseEntity<SimpleResponseStructure> userRegister(UserRequest userRequest) {
@@ -91,10 +99,10 @@ public class AuthServiceImpl implements AuthService {
 		default -> throw new RoleNotSpecifyException("role is null");
 		}
 		String[] split = userRequest.getEmail().split("@");
-		user.setDisplayUsername(userRequest.getName());
+		user.setDisplayUsername(userRequest.getUsername());
 		user.setUsername(split[0]);
 		user.setEmail(userRequest.getEmail());
-		user.setPassword(userRequest.getPassword());
+		user.setPassword(encoder.encode(userRequest.getPassword()));
 		user.setRole(role);
 		user.setDeleted(false);
 		user.setEmailVerified(false);
@@ -127,6 +135,17 @@ public class AuthServiceImpl implements AuthService {
 		return UserResponse.builder().userId(user.getUserId()).displayName(user.getDisplayUsername())
 				.username(user.getUsername()).email(user.getEmail()).isDeleted(user.isDeleted())
 				.isEmailVerified(user.isEmailVerified()).role(user.getRole()).build();
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<UserResponse>> login(UserLoginRequest loginRequest) {
+
+		if (userRepo.existsByUsername(loginRequest.getEmail()))
+			throw new InvalidEmailException("invalid email...");
+		if (!userRepo.existsByPassword(loginRequest.getPassword()))
+			throw new InvalidPasswordException("invalid password....");
+	
+		return null;
 	}
 
 }

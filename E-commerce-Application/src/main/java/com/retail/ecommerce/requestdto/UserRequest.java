@@ -15,7 +15,7 @@ import lombok.Setter;
 public class UserRequest {
 
 	@NotNull
-	private String name;// ^[a-zA-Z0-9+_.-]+@+[g]+[m]+[a]+[i]+[l]+.[c]+[o]+[m]
+	private String username;// ^[a-zA-Z0-9+_.-]+@+[g]+[m]+[a]+[i]+[l]+.[c]+[o]+[m]
 //	@NotBlank // ^[a-zA-Z0-9._%+-]+@gmail\\.com$//^[a-zA-Z0-9._%+-]+@gmail\.com$
 	@NotBlank(message = "Email is required")
 	// @Email(message = "Email is not valid")

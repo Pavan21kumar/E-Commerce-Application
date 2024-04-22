@@ -8,14 +8,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.retail.ecommerce.util.EmailAllreadyPresentException;
+import com.retail.ecommerce.exception.EmailAllreadyPresentException;
+import com.retail.ecommerce.exception.InvalidEmailException;
+import com.retail.ecommerce.exception.InvalidOTPException;
+import com.retail.ecommerce.exception.OtpExpaireException;
+import com.retail.ecommerce.exception.RegistrationSessionExpaireException;
+import com.retail.ecommerce.exception.RoleNotSpecifyException;
+import com.retail.ecommerce.exception.UserAllreadyPresentException;
 import com.retail.ecommerce.util.ErrorStructure;
-import com.retail.ecommerce.util.InvalidEmailException;
-import com.retail.ecommerce.util.InvalidOTPException;
-import com.retail.ecommerce.util.OtpExpaireException;
-import com.retail.ecommerce.util.RegistrationSessionExpaireException;
-import com.retail.ecommerce.util.RoleNotSpecifyException;
-import com.retail.ecommerce.util.UserAllreadyPresentException;
 
 import lombok.AllArgsConstructor;
 
