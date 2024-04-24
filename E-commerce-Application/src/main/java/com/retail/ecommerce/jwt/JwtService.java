@@ -7,9 +7,13 @@ import java.util.HashMap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.lang.Maps;
 import io.jsonwebtoken.security.Keys;
 
 @Service
@@ -30,19 +34,36 @@ public class JwtService {
 
 	}
 
-	private String generateToken(long expairation, String userName) {
-		return Jwts.builder().setClaims(new HashMap<>()).setSubject(userName)
+	private String generateToken(long expairation, String userName,String role) {
+		return Jwts.builder().setClaims(Maps.of("role", role).build())
+				.setSubject(userName)
 				.setIssuedAt(new Date(System.currentTimeMillis()))
 				.setExpiration(new Date(System.currentTimeMillis() + expairation))
 				.signWith(getSignatureKey(), SignatureAlgorithm.HS512).compact();
 	}
 
-	public String generateAccessToken(String userName) {
-		return generateToken(accesExpairation, userName);
+	public String generateAccessToken(String userName,String role) {
+		return generateToken(accesExpairation, userName,role);
 	}
 
-	public String generateRefreshToken(String userName) {
-		return generateToken(refreshExpairation, userName);
+	public String generateRefreshToken(String userName,String role) {
+		return generateToken(refreshExpairation, userName,role);
+	}
+
+	public String getUserName(String token) {
+
+		return parseJwtClaims(token).getSubject();
+
+	}
+
+	private Claims parseJwtClaims(String token) {
+		return Jwts.parserBuilder().setSigningKey(getSignatureKey()).build().parseClaimsJws(token).getBody();
+
+	}
+	
+	public String getRole(String token)
+	{
+	return	parseJwtClaims(token).get("role", String.class);
 	}
 
 }

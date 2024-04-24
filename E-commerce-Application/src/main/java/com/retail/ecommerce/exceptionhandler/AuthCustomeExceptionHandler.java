@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.retail.ecommerce.exception.EmailAllreadyPresentException;
+import com.retail.ecommerce.exception.InvalidCreadentials;
 import com.retail.ecommerce.exception.InvalidEmailException;
 import com.retail.ecommerce.exception.InvalidOTPException;
 import com.retail.ecommerce.exception.OtpExpaireException;
@@ -75,10 +76,18 @@ public class AuthCustomeExceptionHandler {
 				.setMessage("please check Network.........").setRootCouse(e.getMessage()));
 	}
 
-	@ExceptionHandler
+	@ExceptionHandler // InvalidCreadentials
 	public ResponseEntity<ErrorStructure<String>> handlingMailConnectException(MailConnectException e) {
 		return ResponseEntity.badRequest().body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
 				.setMessage("please check Network.........").setRootCouse(e.getMessage()));
+	}
+
+	@ExceptionHandler
+	public ResponseEntity<ErrorStructure<String>> handlingInvalidCreadentialsException(InvalidCreadentials e) {
+		return ResponseEntity.badRequest()
+				.body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
+						.setMessage("Invalid Creadentials.. please enter correct Details...........")
+						.setRootCouse(e.getMessage()));
 	}
 
 }
