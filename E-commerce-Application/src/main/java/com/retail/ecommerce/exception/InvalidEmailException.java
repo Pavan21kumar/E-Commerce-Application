@@ -1,11 +1,11 @@
-package com.retail.ecommerce.util;
+package com.retail.ecommerce.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class EmailAllreadyPresentException extends RuntimeException {
+public class InvalidEmailException extends RuntimeException {
 
 	private String message;
 }

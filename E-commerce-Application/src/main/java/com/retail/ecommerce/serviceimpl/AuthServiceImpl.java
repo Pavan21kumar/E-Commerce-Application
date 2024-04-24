@@ -1,38 +1,54 @@
 package com.retail.ecommerce.serviceimpl;
 
 import java.text.DecimalFormat;
+import java.time.Duration;
 import java.util.Random;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.retail.ecommerce.cache.CacheStore;
+import com.retail.ecommerce.entity.Accesstoken;
 import com.retail.ecommerce.entity.Customer;
+import com.retail.ecommerce.entity.RefreshToken;
 import com.retail.ecommerce.entity.Seller;
 import com.retail.ecommerce.entity.User;
 import com.retail.ecommerce.enums.UserRole;
+import com.retail.ecommerce.exception.EmailAllreadyPresentException;
+import com.retail.ecommerce.exception.InvalidCreadentials;
+import com.retail.ecommerce.exception.InvalidEmailException;
+import com.retail.ecommerce.exception.InvalidOTPException;
+import com.retail.ecommerce.exception.OtpExpaireException;
+import com.retail.ecommerce.exception.RegistrationSessionExpaireException;
+import com.retail.ecommerce.exception.RoleNotSpecifyException;
+import com.retail.ecommerce.jwt.JwtService;
 import com.retail.ecommerce.mailservice.MailService;
 import com.retail.ecommerce.mailservice.MessageModel;
+import com.retail.ecommerce.repository.AccessTokenRepo;
+import com.retail.ecommerce.repository.RefreshTokenRepo;
 import com.retail.ecommerce.repository.UserRegisterRepoository;
+import com.retail.ecommerce.requestdto.AuthRequest;
 import com.retail.ecommerce.requestdto.UserRequest;
+import com.retail.ecommerce.responsedto.AuthResponse;
 import com.retail.ecommerce.responsedto.OtpRequest;
 import com.retail.ecommerce.responsedto.UserResponse;
 import com.retail.ecommerce.service.AuthService;
-import com.retail.ecommerce.util.EmailAllreadyPresentException;
-import com.retail.ecommerce.util.InvalidEmailException;
-import com.retail.ecommerce.util.InvalidOTPException;
-import com.retail.ecommerce.util.OtpExpaireException;
-import com.retail.ecommerce.util.RegistrationSessionExpaireException;
 import com.retail.ecommerce.util.ResponseStructure;
-import com.retail.ecommerce.util.RoleNotSpecifyException;
 import com.retail.ecommerce.util.SimpleResponseStructure;
 
 import jakarta.mail.MessagingException;
 import lombok.AllArgsConstructor;
 
 @Service
-@AllArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
 	private UserRegisterRepoository userRepo;
@@ -41,6 +57,37 @@ public class AuthServiceImpl implements AuthService {
 	private ResponseStructure<UserResponse> responseStructure;
 	private SimpleResponseStructure otpStructure;
 	private MailService mailService;
+	private PasswordEncoder encoder;
+	private AccessTokenRepo accessTokenRepo;
+	private RefreshTokenRepo refreshTokenRepo;
+	private AuthenticationManager authenticationManager;
+	private JwtService jwtService;
+	@Value("${myapp.jwt.access.expairation}")
+	private long accessExpairation;
+	@Value("${myapp.jwt.refresh.expairation}")
+	private long refreshExpairation;
+	private ResponseStructure<AuthResponse> authStucture;
+
+	public AuthServiceImpl(UserRegisterRepoository userRepo, CacheStore<String> otpCache, CacheStore<User> userCache,
+			ResponseStructure<UserResponse> responseStructure, SimpleResponseStructure otpStructure,
+			MailService mailService, PasswordEncoder encoder, AccessTokenRepo accessTokenRepo,
+			RefreshTokenRepo refreshTokenRepo, AuthenticationManager authenticationManager, JwtService jwtService,
+			ResponseStructure<AuthResponse> authStucture) {
+		super();
+		this.userRepo = userRepo;
+		this.otpCache = otpCache;
+		this.userCache = userCache;
+		this.responseStructure = responseStructure;
+		this.otpStructure = otpStructure;
+		this.mailService = mailService;
+		this.encoder = encoder;
+		this.accessTokenRepo = accessTokenRepo;
+		this.refreshTokenRepo = refreshTokenRepo;
+		this.authenticationManager = authenticationManager;
+		this.jwtService = jwtService;
+		this.authStucture = authStucture;
+
+	}
 
 	@Override
 	public ResponseEntity<SimpleResponseStructure> userRegister(UserRequest userRequest) {
@@ -91,10 +138,10 @@ public class AuthServiceImpl implements AuthService {
 		default -> throw new RoleNotSpecifyException("role is null");
 		}
 		String[] split = userRequest.getEmail().split("@");
-		user.setDisplayUsername(userRequest.getName());
+		user.setDisplayUsername(userRequest.getUsername());
 		user.setUsername(split[0]);
 		user.setEmail(userRequest.getEmail());
-		user.setPassword(userRequest.getPassword());
+		user.setPassword(encoder.encode(userRequest.getPassword()));
 		user.setRole(role);
 		user.setDeleted(false);
 		user.setEmailVerified(false);
@@ -127,6 +174,61 @@ public class AuthServiceImpl implements AuthService {
 		return UserResponse.builder().userId(user.getUserId()).displayName(user.getDisplayUsername())
 				.username(user.getUsername()).email(user.getEmail()).isDeleted(user.isDeleted())
 				.isEmailVerified(user.isEmailVerified()).role(user.getRole()).build();
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest) {
+
+		String username = authRequest.getEmail().split("@")[0];
+		Authentication authenticate = authenticationManager
+				.authenticate(new UsernamePasswordAuthenticationToken(username, authRequest.getPassword()));
+		if (!authenticate.isAuthenticated())
+			throw new InvalidCreadentials("please enter valid Credentials....");
+		SecurityContextHolder.getContext().setAuthentication(authenticate);
+
+		HttpHeaders headers = new HttpHeaders();
+		userRepo.findByUsername(username).ifPresent(user -> {
+			Accesstoken accessToken = createAccessToken(user, headers);
+			RefreshToken refreshToken = createRefreshToken(user, headers);
+			accessToken.setUser(user);
+			refreshToken.setUser(user);
+			accessToken = accessTokenRepo.save(accessToken);
+			refreshToken = refreshTokenRepo.save(refreshToken);
+		});
+
+		return ResponseEntity.ok().headers(headers)
+				.body(authStucture.setStatusCode(HttpStatus.OK.value()).setMessage("succefully login")
+						.setData(mapToAuthResponse(username, accessExpairation, refreshExpairation)));
+	}
+
+	private AuthResponse mapToAuthResponse(String username, long accessExpairation, long refreshExpairation) {
+
+		User user = userRepo.findByUsername(username).get();
+
+		return AuthResponse.builder().userId(user.getUserId()).username(user.getUsername()).role(user.getRole())
+				.accessExpairation(accessExpairation).refreshExpairation(refreshExpairation).build();
+	}
+
+	private Accesstoken createAccessToken(User user, HttpHeaders headers) {
+
+		String token = jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
+		headers.add(HttpHeaders.SET_COOKIE, configureCookie("at", token, accessExpairation));
+
+		return Accesstoken.builder().token(token).expairation(accessExpairation).isBlocked(false).build();
+	}
+
+	private RefreshToken createRefreshToken(User user, HttpHeaders headers) {
+
+		String token = jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
+		headers.add(HttpHeaders.SET_COOKIE, configureCookie("rt", token, refreshExpairation));
+
+		return RefreshToken.builder().token(token).expiration(refreshExpairation).isBlocked(false).build();
+
+	}
+
+	private String configureCookie(String name, String value, long maxAge) {
+		return ResponseCookie.from(name, value).domain("localhost").path("/").httpOnly(true).secure(false)
+				.maxAge(Duration.ofMillis(maxAge)).sameSite("Lax").build().toString();
 	}
 
 }

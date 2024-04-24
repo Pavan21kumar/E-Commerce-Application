@@ -1,11 +1,11 @@
-package com.retail.ecommerce.util;
+package com.retail.ecommerce.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class OtpExpaireException extends RuntimeException {
+public class EmailAllreadyPresentException extends RuntimeException {
 
 	private String message;
 }

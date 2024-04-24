@@ -15,7 +15,7 @@ public class ECommerceApplication {
 		
 		ECommerceApplication bean = run.getBean(ECommerceApplication.class);
 		
-		System.out.println(bean.name);
+		
 	}
 
 }

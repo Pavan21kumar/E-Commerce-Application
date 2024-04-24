@@ -1,4 +1,4 @@
-package com.retail.ecommerce.mailservice;
+    package com.retail.ecommerce.mailservice;
 
 import java.util.Date;
 
