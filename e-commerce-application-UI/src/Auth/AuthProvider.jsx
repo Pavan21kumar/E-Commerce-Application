@@ -9,7 +9,7 @@ const AuthProvider = ({ children }) => {
     userId: "",
     name: "Simanta Sen",
     role: "CUSTOMER",
-    authenticated: false,
+    authenticated: true,
     accessExpiration: 0,
     refreshExpiration: 0,
   });

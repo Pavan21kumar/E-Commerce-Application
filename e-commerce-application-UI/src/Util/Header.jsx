@@ -12,6 +12,7 @@ import { BsGift } from "react-icons/bs";
 import { MdLogin } from "react-icons/md";
 import { FaBox } from "react-icons/fa";
 import { useAuth } from "../Auth/AuthProvider";
+import AddAddress from "../Private/Common/AddAddress";
 const Header = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -175,6 +176,12 @@ const Header = () => {
                   <FaBoxOpen className="ml-2" />
                   <div className="ml-4">Rewards</div>
                 </Link>
+                <Link to={"/AddAddress"}
+            // Add logic to open AddAddress form here
+            className="text-black flex items-center">
+         
+            <FaRegPlusSquare className="mr-3" /> Add Address
+            </Link>
                 <Link
                   to={"/profile"}
                   className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center"

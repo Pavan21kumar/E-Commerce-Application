@@ -12,6 +12,7 @@ import VerifyOTP from "../Public/VerifyOtp.jsx";
 import SellerDashboard from "../Private/Seller/SellerDashboard.jsx";
 import { useAuth } from "../Auth/AuthProvider.jsx";
 import Logout from "../Public/Logout.jsx";
+import AddAddress from "../Private/Common/AddAddress.jsx";
 
 const AllRoutes = () => {
   const { user } = useAuth();
@@ -26,7 +27,9 @@ const AllRoutes = () => {
         <Route key="account" path="/account" element={<Account />} />,
         <Route key="cart" path="/cart" element={<Cart />} />,
         <Route key="orders" path="/orders" element={<Order />} />,
-        <Route key="logout" path="/logout" element={<Logout />} />
+        <Route key="logout" path="/logout" element={<Logout />} />,
+        <Route key="AddAddress" path="/AddAddress" element={<AddAddress />} />
+
       );
     } else if (role === "SELLER") {
       routes.push(
