@@ -22,19 +22,19 @@ const ImageSlider = () => {
       <div className="slider-container">
         <Slider {...settings}>
           <div>
-            <img src="https://rukminim1.flixcart.com/fk-p-flap/1600/270/image/bd1010eeb80fc29b.jpg?q=20" alt="Image 1" className='border-none' />
+            <img src={img1} alt="Image 1" />
           </div>
           <div>
-            <img src="https://rukminim1.flixcart.com/fk-p-flap/1600/270/image/5a51a6ffa84d75a7.png?q=20" alt="Image 2 className='border-none'" />
+            <img src={img3} alt="Image 2" />
           </div>
           <div>
-            <img src={img4} alt="Image 3 className='border-none'" />
+            <img src={img4} alt="Image 3" />
           </div>
           <div>
-            <img src={img5} alt="Image 3 className='border-none'" />
+            <img src={img5} alt="Image 3" />
           </div>
           <div>
-            <img src={img6} alt="Image 3 className='border-none'" />
+            <img src={img6} alt="Image 3" />
           </div>
         </Slider>
       </div>

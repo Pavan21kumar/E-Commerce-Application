@@ -1,53 +1,72 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from "../Auth/AuthProvider";
 
-const Login = () => {
-  const [email, setEmail] = useState("");
+function Login() {
+  const [email, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState(null); // State for error message
-  const handleEmailChange = (e) => {
-    const enteredEmail = e.target.value;
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex pattern for email validation
+  const { setUser } = useAuth();
+  const navigate = useNavigate();
 
-    if (!enteredEmail.match(emailPattern)) {
-      setErrorMessage("Please Enter A Valid Email Address.");
-    } else {
-      setErrorMessage("");
-    }
-    setEmail(enteredEmail);
+  const handleUsernameChange = (e) => {
+    setUsername(e.target.value);
   };
+
   const handlePasswordChange = (e) => {
-    const enteredPassword = e.target.value;
-    const passwordPattern =
-      /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+])(?=.*[a-zA-Z]).{8,}$/;
-    if (!enteredPassword.match(passwordPattern)) {
-      setErrorMessage(
-        "Password must contain at least one digit, one lowercase letter, one uppercase letter, one special character, and be at least 8 characters long."
-      );
-    } else {
-      setErrorMessage("");
+    setPassword(e.target.value);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = {
+      email: email,
+      password: password
+    };
+
+    try {
+      const response = await axios.post('http://localhost:8080/api/v1/login', formData, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
+      });
+
+      if (response.status === 200) {
+        const responseData = {
+          userId: response.data.statusData.userId,
+          username: response.data.statusData.userName,
+          role: response.data.statusData.userRole,
+          authenticated: true
+        };
+
+        // Store user data in localStorage
+        localStorage.setItem('userData', JSON.stringify(responseData));
+
+        setUser(responseData);
+        navigate('/');
+      }
+    } catch (error) {
+      if (error.response) {
+        console.error('Server error:', error, error.response.status);
+      } else if (error.request) {
+        console.error('Request failed, could not reach server.');
+      } else {
+        console.log('Error creating request:', error);
+      }
     }
-
-    setPassword(enteredPassword);
   };
-  const handleSignup = () => {
-    // Save form data to state
-    const formData = { email, phoneNumber };
-    setSubmittedData(formData);
 
-    // Reset form fields
-    setEmail("");
-    setPassword("");
-  };
-  return (
+  return ( 
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
       <div className="bg-white p-8 shadow-md max-w-xl w-full max-h-fit hover:shadow-2xl">
-        <h2 className="text-3xl font-bold mb-6 text-center ">Login Form</h2>
+        <h2 className="text-3xl font-bold mb-6 text-center">Login Form</h2>
         <input
-          type="email"
-          placeholder="Email"
+          type="text"
+          placeholder="Username"
           value={email}
-          onChange={handleEmailChange}
+          onChange={handleUsernameChange}
           className="border border-gray-400 rounded-md px-3 py-2 mb-4 w-full focus:outline-none focus:border-blue-500"
         />
         <input
@@ -57,30 +76,20 @@ const Login = () => {
           onChange={handlePasswordChange}
           className="border border-gray-400 rounded-md px-3 py-2 mb-4 w-full focus:outline-none focus:border-blue-500"
         />
-        {errorMessage && (
-          <div className="text-red-500 text-xs">{errorMessage}</div>
-        )}
-        <p className="text-gray-600 mb-4 text-sm">
-          By continuing, you agree to Flipkart's{" "}
-          <span className="text-blue-500">Terms of Use</span> and{" "}
-          <span className="text-blue-500">Privacy Policy.</span>
-        </p>
         <button
-          onClick={handleSignup}
+          onClick={handleSubmit}
           className="bg-orange-600 hover:bg-orange-700 text-white rounded-md px-4 py-2 w-full font-bold"
         >
-          Submit
+          Login
         </button>
         <p className="text-gray-600 mt-4">
           <span className="text-blue-500 font-bold">
-            <Link to="/register">
-              New to Flipkart? &nbsp; Create an account
-            </Link>
+            <Link to="/register">New to Flipkart? &nbsp; Create an account</Link>
           </span>
         </p>
-        <Link to="/VerifyOTP">Verify Otp</Link>
       </div>
     </div>
   );
 };
-export default Login;
+
+export default Login;

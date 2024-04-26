@@ -5,17 +5,20 @@ import Body from "./Util/Body";
 import Slide from "./Util/Slide";
 import Electronics from "./Util/Electronics";
 import Electronics1 from "./Util/Electronics1";
+import AllRoutes from "./Routes/AllRoutes";
 const App = () => {
   return (
     <div className="m-0">
       <Header />
       <Outlet />
-      {/* <Body/>
+      <Body/>
       <Slide/>
       <Electronics/>
-      <Electronics1/> */}
+      <Electronics1/>
+      
     </div>
   );
 };
+
 
 export default App;

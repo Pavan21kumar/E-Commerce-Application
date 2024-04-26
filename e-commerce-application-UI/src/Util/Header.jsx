@@ -11,6 +11,7 @@ import { FiBox } from "react-icons/fi";
 import { BsGift } from "react-icons/bs";
 import { MdLogin } from "react-icons/md";
 import { FaBox } from "react-icons/fa";
+import { useAuth } from "../Auth/AuthProvider";
 const Header = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -29,15 +30,8 @@ const Header = () => {
     }, 3000);
   };
 
-  const user = {
-    userId: "123",
-    userName: "Simanta Sen",
-    role: "CUSTOMER",
-    authenticated: false,
-    accessExpiration: 3600,
-    refreshExpiration: 1296000,
-  };
-  const { userName, role, authenticated } = user;
+  const {user} = useAuth();
+  const { name, role, authenticated } = user;
   if (!authenticated) {
     return (
       <div className="flex items-center justify-around text-slate-100 py-2 text-xl text-center align-middle shadow-xl">
@@ -122,9 +116,9 @@ const Header = () => {
           </Link>
         </div>
         <div className="flex items-center">
-          <Link to={"/wishList"} className="text-black flex items-center">
+          <Link to={"/seller/register"} className="text-black flex items-center">
             <IoBagHandle className="mr-3" />
-            Wishlist
+            Become A Seller
           </Link>
         </div>
       </div>
@@ -146,7 +140,7 @@ const Header = () => {
             className="text-black h-10 w-30 px-4 bg-white rounded-md focus:outline-none hover:bg-blue-600 hover:text-white"
           >
             <span className="flex items-center">
-              <FaRegUserCircle /> &nbsp;&nbsp; {userName}
+              <FaRegUserCircle /> &nbsp;&nbsp; {name}
             </span>
           </button>
           {dropdownOpen && (
@@ -222,7 +216,7 @@ const Header = () => {
             className="text-black h-10 w-30 px-4 bg-white rounded-md focus:outline-none hover:bg-blue-600 hover:text-white"
           >
             <span className="flex items-center">
-              <FaRegUserCircle /> &nbsp;&nbsp; {userName}
+              <FaRegUserCircle /> &nbsp;&nbsp; {name}
             </span>
           </button>
           {dropdownOpen && (
