@@ -1,5 +1,7 @@
 package com.retail.ecommerce.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,7 +25,7 @@ public class Accesstoken {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int tokenId;
 	private String token;
-	private long expairation;
+	private LocalDateTime expiration;
 	private boolean isBlocked;
 	@ManyToOne
 	private User user;

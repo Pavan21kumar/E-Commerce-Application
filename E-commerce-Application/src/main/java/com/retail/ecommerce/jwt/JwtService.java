@@ -2,14 +2,15 @@ package com.retail.ecommerce.jwt;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.retail.ecommerce.entity.RefreshToken;
+import com.retail.ecommerce.repository.RefreshTokenRepo;
+
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -28,26 +29,32 @@ public class JwtService {
 	@Value("${myapp.jwt.refresh.expairation}")
 	private long refreshExpairation;
 
+	private RefreshTokenRepo refreshTokenRepo;
+	
+	public JwtService(RefreshTokenRepo refreshTokenRepo) {
+		super();
+		this.refreshTokenRepo = refreshTokenRepo;
+	}
+
 	private Key getSignatureKey() {
 
 		return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secrete));
 
 	}
 
-	private String generateToken(long expairation, String userName,String role) {
-		return Jwts.builder().setClaims(Maps.of("role", role).build())
-				.setSubject(userName)
+	private String generateToken(long expairation, String userName, String role) {
+		return Jwts.builder().setClaims(Maps.of("role", role).build()).setSubject(userName)
 				.setIssuedAt(new Date(System.currentTimeMillis()))
 				.setExpiration(new Date(System.currentTimeMillis() + expairation))
 				.signWith(getSignatureKey(), SignatureAlgorithm.HS512).compact();
 	}
 
-	public String generateAccessToken(String userName,String role) {
-		return generateToken(accesExpairation, userName,role);
+	public String generateAccessToken(String userName, String role) {
+		return generateToken(accesExpairation, userName, role);
 	}
 
-	public String generateRefreshToken(String userName,String role) {
-		return generateToken(refreshExpairation, userName,role);
+	public String generateRefreshToken(String userName, String role) {
+		return generateToken(refreshExpairation, userName, role);
 	}
 
 	public String getUserName(String token) {
@@ -60,10 +67,17 @@ public class JwtService {
 		return Jwts.parserBuilder().setSigningKey(getSignatureKey()).build().parseClaimsJws(token).getBody();
 
 	}
-	
-	public String getRole(String token)
-	{
-	return	parseJwtClaims(token).get("role", String.class);
+
+	public String getRole(String token) {
+		return parseJwtClaims(token).get("role", String.class);
 	}
+
+	public Date getDate(String token) {
+		return parseJwtClaims(token).getIssuedAt();
+	}
+//	public List<RefreshToken> getAllRefreshtoken()
+//	{
+//		
+//	}
 
 }

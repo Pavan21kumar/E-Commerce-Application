@@ -33,7 +33,6 @@ public class JwtFilter extends OncePerRequestFilter {
 	private JwtService jwtService;
 	private AccessTokenRepo accessTokenRepo;
 	private RefreshTokenRepo refreshTokenRepo;
-	private ErrorStructure<String> errorStructure;
 
 	@Override // FilterChain is Belongs to Servlet FilterChain
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

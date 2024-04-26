@@ -2,6 +2,8 @@ package com.retail.ecommerce.serviceimpl;
 
 import java.text.DecimalFormat;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +32,7 @@ import com.retail.ecommerce.exception.InvalidOTPException;
 import com.retail.ecommerce.exception.OtpExpaireException;
 import com.retail.ecommerce.exception.RegistrationSessionExpaireException;
 import com.retail.ecommerce.exception.RoleNotSpecifyException;
+import com.retail.ecommerce.exception.UserIsNotLoginException;
 import com.retail.ecommerce.jwt.JwtService;
 import com.retail.ecommerce.mailservice.MailService;
 import com.retail.ecommerce.mailservice.MessageModel;
@@ -45,7 +48,12 @@ import com.retail.ecommerce.service.AuthService;
 import com.retail.ecommerce.util.ResponseStructure;
 import com.retail.ecommerce.util.SimpleResponseStructure;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -67,12 +75,13 @@ public class AuthServiceImpl implements AuthService {
 	@Value("${myapp.jwt.refresh.expairation}")
 	private long refreshExpairation;
 	private ResponseStructure<AuthResponse> authStucture;
+	private SimpleResponseStructure simpleResponseStructure;
 
 	public AuthServiceImpl(UserRegisterRepoository userRepo, CacheStore<String> otpCache, CacheStore<User> userCache,
 			ResponseStructure<UserResponse> responseStructure, SimpleResponseStructure otpStructure,
 			MailService mailService, PasswordEncoder encoder, AccessTokenRepo accessTokenRepo,
 			RefreshTokenRepo refreshTokenRepo, AuthenticationManager authenticationManager, JwtService jwtService,
-			ResponseStructure<AuthResponse> authStucture) {
+			ResponseStructure<AuthResponse> authStucture, SimpleResponseStructure simpleResponseStructure) {
 		super();
 		this.userRepo = userRepo;
 		this.otpCache = otpCache;
@@ -86,6 +95,7 @@ public class AuthServiceImpl implements AuthService {
 		this.authenticationManager = authenticationManager;
 		this.jwtService = jwtService;
 		this.authStucture = authStucture;
+		this.simpleResponseStructure = simpleResponseStructure;
 
 	}
 
@@ -214,7 +224,7 @@ public class AuthServiceImpl implements AuthService {
 		String token = jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
 		headers.add(HttpHeaders.SET_COOKIE, configureCookie("at", token, accessExpairation));
 
-		return Accesstoken.builder().token(token).expairation(accessExpairation).isBlocked(false).build();
+		return Accesstoken.builder().token(token).expiration(LocalDateTime.now()).isBlocked(false).build();
 	}
 
 	private RefreshToken createRefreshToken(User user, HttpHeaders headers) {
@@ -222,13 +232,103 @@ public class AuthServiceImpl implements AuthService {
 		String token = jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
 		headers.add(HttpHeaders.SET_COOKIE, configureCookie("rt", token, refreshExpairation));
 
-		return RefreshToken.builder().token(token).expiration(refreshExpairation).isBlocked(false).build();
+		return RefreshToken.builder().token(token).expiration(LocalDateTime.now()).isBlocked(false).build();
 
 	}
 
 	private String configureCookie(String name, String value, long maxAge) {
 		return ResponseCookie.from(name, value).domain("localhost").path("/").httpOnly(true).secure(false)
 				.maxAge(Duration.ofMillis(maxAge)).sameSite("Lax").build().toString();
+	}
+
+	@Override
+	public ResponseEntity<SimpleResponseStructure> logout(String accessToken, String refreshToken) {
+
+		if (accessToken == null || refreshToken == null)
+			throw new UserIsNotLoginException("user is not Login");
+
+		HttpHeaders headers = new HttpHeaders();
+
+		accessTokenRepo.findByToken(accessToken).ifPresent(access -> {
+
+			refreshTokenRepo.findByToken(refreshToken).ifPresent(refresh -> {
+
+				access.setBlocked(true);
+				accessTokenRepo.save(access);
+				refresh.setBlocked(true);
+				refreshTokenRepo.save(refresh);
+
+				removeAccess("at", headers);
+				removeAccess("rt", headers);
+
+			});
+		});
+		return ResponseEntity.ok().headers(headers)
+				.body(simpleResponseStructure.setMessage("LogOut Sucessfully...").setStatusCode(HttpStatus.OK.value()));
+	}
+
+	private void removeAccess(String value, HttpHeaders headers) {
+		headers.add(HttpHeaders.SET_COOKIE, removeCookie(value));
+	}
+
+	private String removeCookie(String name) {
+		return ResponseCookie.from(name, "").domain("localhost").path("/").httpOnly(true).secure(false).maxAge(0)
+				.sameSite("Lax").build().toString();
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<AuthResponse>> refreshToken(String accessToken, String refreshToken) {
+
+		if (accessToken != null) {
+			accessTokenRepo.findByToken(accessToken).ifPresent(at -> {
+
+				at.setBlocked(true);
+				accessTokenRepo.save(at);
+
+			});
+
+		}
+
+		HttpHeaders headers = new HttpHeaders();
+		if (refreshToken == null)
+			throw new UserIsNotLoginException("user is not login");
+
+		refreshTokenRepo.findByToken(refreshToken).ifPresent(rt -> {
+
+			Date date = jwtService.getDate(refreshToken);
+			System.out.println(date);
+			System.out.println(new Date().getDate());
+			User user = rt.getUser();
+			if (date.getDate() == (new Date().getDate())) {
+
+				Accesstoken at = createAccessToken(rt.getUser(), headers);
+				rt = createRefreshToken(rt.getUser(), headers);
+				at.setUser(user);
+				accessTokenRepo.save(at);
+
+			} else {
+				String token = jwtService.generateRefreshToken(rt.getUser().getUsername(),
+						rt.getUser().getRole().name());
+				String accesstoken = jwtService.generateRefreshToken(rt.getUser().getUsername(),
+						rt.getUser().getRole().name());
+				rt.setBlocked(true);
+				refreshTokenRepo.save(rt);
+
+				Accesstoken at = createAccessToken(rt.getUser(), headers);
+				rt = createRefreshToken(rt.getUser(), headers);
+				at.setUser(user);
+				rt.setUser(user);
+				accessTokenRepo.save(at);
+				refreshTokenRepo.save(rt);
+
+			}
+
+		});
+		String username = jwtService.getUserName(refreshToken);
+
+		return ResponseEntity.ok().headers(headers)
+				.body(authStucture.setStatusCode(HttpStatus.OK.value()).setMessage("token is generated..")
+						.setData(mapToAuthResponse(username, accessExpairation, refreshExpairation)));
 	}
 
 }

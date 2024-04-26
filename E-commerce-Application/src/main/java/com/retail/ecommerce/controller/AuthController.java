@@ -1,8 +1,8 @@
 package com.retail.ecommerce.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,5 +49,16 @@ public class AuthController {
 	@PostMapping("/login")
 	public ResponseEntity<ResponseStructure<AuthResponse>> login(@Valid @RequestBody AuthRequest loginRequest) {
 		return userService.login(loginRequest);
+	}
+
+	@PostMapping("/logout")
+	public ResponseEntity<SimpleResponseStructure> logout(@CookieValue(name = "at",required = false)String accessToken,@CookieValue(name = "rt",required = false) String refreshToken ) {
+		return userService.logout(accessToken,refreshToken);
+	}
+	@PostMapping("/login/refresh")
+	public ResponseEntity<ResponseStructure<AuthResponse>>refreshToken(@CookieValue(name = "at",required = false)String accessToken,@CookieValue(name = "rt",required = false) String refreshToken)
+	{
+		return userService.refreshToken(accessToken,refreshToken);
+		
 	}
 }
