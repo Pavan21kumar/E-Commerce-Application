@@ -16,6 +16,7 @@ import com.retail.ecommerce.exception.OtpExpaireException;
 import com.retail.ecommerce.exception.RegistrationSessionExpaireException;
 import com.retail.ecommerce.exception.RoleNotSpecifyException;
 import com.retail.ecommerce.exception.UserAllreadyPresentException;
+import com.retail.ecommerce.exception.UserIsNotLoginException;
 import com.retail.ecommerce.util.ErrorStructure;
 
 import lombok.AllArgsConstructor;
@@ -82,12 +83,23 @@ public class AuthCustomeExceptionHandler {
 				.setMessage("please check Network.........").setRootCouse(e.getMessage()));
 	}
 
-	@ExceptionHandler
+	@ExceptionHandler // UserIsNotLoginException
 	public ResponseEntity<ErrorStructure<String>> handlingInvalidCreadentialsException(InvalidCreadentials e) {
 		return ResponseEntity.badRequest()
 				.body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
 						.setMessage("Invalid Creadentials.. please enter correct Details...........")
 						.setRootCouse(e.getMessage()));
 	}
+//InvalidCreadentials
+	@ExceptionHandler // UserIsNotLoginException
+	public ResponseEntity<ErrorStructure<String>> handlingUserIsNotLoginException(UserIsNotLoginException e) {
+		return ResponseEntity.badRequest().body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
+				.setMessage("User Is Not Login. please Login First.............").setRootCouse(e.getMessage()));
+	}
+//	@ExceptionHandler // UserIsNotLoginException
+//	public ResponseEntity<ErrorStructure<String>> handlingUserIsNotLoginException(InvalidCreadentials e) {
+//		return ResponseEntity.badRequest().body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
+//				.setMessage("User Is Not Login. please Login First.............").setRootCouse(e.getMessage()));
+//	}
 
 }

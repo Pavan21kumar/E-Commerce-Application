@@ -1,109 +1,152 @@
 import React, { useState } from "react";
+import axios from "axios"; // Import Axios
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
-const Register = () => {
+const Register = ({ role }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState(null); // State for error message
-  const [submittedData, setSubmittedData] = useState(null); // State to hold submitted data
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const navigate = useNavigate(); // Instance of useNavigate
 
   const handleNameChange = (e) => {
-    let inputName = e.target.value;
-
-    // Remove non-alphabetical characters
-    inputName = inputName.replace(/[^A-Za-z\s]/g, "");
-
-    // Capitalize first letter of each word
-    inputName = inputName.replace(/\b\w/g, (char) => char.toUpperCase());
-
-    // Check if input is empty or contains invalid characters
-    if (!inputName || inputName !== e.target.value) {
-      setErrorMessage(
-        "Please Enter A Valid Name With Only Alphabetical Characters."
-      );
+    const newName = e.target.value;
+    setName(newName);
+    // Validation logic for username
+    if (newName && !/^[a-zA-Z\s]*$/.test(newName)) {
+      setNameError("Name should contain only alphabetical characters");
     } else {
-      setErrorMessage("");
+      setNameError("");
     }
-    setName(inputName);
   };
+
   const handleEmailChange = (e) => {
-    const enteredEmail = e.target.value;
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex pattern for email validation
-
-    if (!enteredEmail.match(emailPattern)) {
-      setErrorMessage("Please Enter A Valid Email Address.");
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    // Validation logic for email
+    if (newEmail && !/^\S+@\S+\.\S+$/.test(newEmail)) {
+      setEmailError("Please enter a valid email address");
     } else {
-      setErrorMessage("");
+      setEmailError("");
     }
-    setEmail(enteredEmail);
   };
+
   const handlePasswordChange = (e) => {
-    const enteredPassword = e.target.value;
-    const passwordPattern =
-      /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+])(?=.*[a-zA-Z]).{8,}$/;
-    if (!enteredPassword.match(passwordPattern)) {
-      setErrorMessage(
-        "Password must contain at least one digit, one lowercase letter, one uppercase letter, one special character, and be at least 8 characters long."
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    // Validation logic for password
+    if (
+      newPassword &&
+      !/(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}/.test(newPassword)
+    ) {
+      setPasswordError(
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and be at least 8 characters long"
       );
     } else {
-      setErrorMessage("");
+      setPasswordError("");
     }
-
-    setPassword(enteredPassword);
   };
-  const handleSignup = () => {
-    // Save form data to state
-    const formData = { name, email, phoneNumber, password };
-    setSubmittedData(formData);
 
-    // Reset form fields
-    setName("");
-    setEmail("");
-    setPhoneNumber("");
-    setPassword("");
+  const handleSubmit = async () => {
+    if (
+      !nameError &&
+      !emailError &&
+      !passwordError &&
+      name &&
+      email &&
+      password
+    ) {
+      try {
+        // Make a POST request to your backend API
+        const response = await axios.post(
+          "http://localhost:8080/api/v1/users/register",
+          {
+            name: name,
+            email: email,
+            password: password,
+            userRole: role,
+          }
+        );
+        console.log("Registration successful:", response.data);
+
+        // Store email in session storage
+        sessionStorage.setItem("userEmail", email);
+
+        // Clear form fields
+        setName("");
+        setEmail("");
+        setPassword("");
+
+        // Redirect to Verify OTP page
+        navigate("/verifyOTP"); // Ensure the route is correct
+      } catch (error) {
+        console.error("Error registering:", error);
+      }
+    } else {
+      // Update error states if fields are empty
+      if (!name) setNameError("Name is required");
+      if (!email) setEmailError("Email is required");
+      if (!password) setPasswordError("Password is required");
+    }
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
       <div className="bg-white p-8 shadow-md max-w-xl w-full max-h-fit hover:shadow-2xl">
-        <h2 className="text-3xl font-bold mb-6 text-center ">Registration Form</h2>
-        <input
-          type="text"
-          placeholder="Full Name"
-          value={name}
-          onChange={handleNameChange}
-          className="border border-gray-400 rounded-md px-3 py-2 mb-4 w-full focus:outline-none focus:border-blue-500"
-        />
-       
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={handleEmailChange}
-          className="border border-gray-400 rounded-md px-3 py-2 mb-4 w-full focus:outline-none focus:border-blue-500"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={handlePasswordChange}
-          className="border border-gray-400 rounded-md px-3 py-2 mb-4 w-full focus:outline-none focus:border-blue-500"
-        />
-        {errorMessage && <div className="text-red-500 text-xs">{errorMessage}</div>}
-        <button
-          onClick={handleSignup}
-          className="bg-orange-600 hover:bg-orange-700 text-white rounded-md px-4 py-2 w-full font-bold"
-        >
-          Submit
-        </button>
-        <p className="text-gray-600 mt-4 text-center">
-          Already have an account?{" "}
-          <Link to="/login" className="text-blue-500 font-bold">
-            Log In
-          </Link>
-        </p>
+        <h2 className="text-3xl font-bold mb-6 text-center ">
+          {" "}
+          Registration Form As {role}
+        </h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Enter Your Name"
+              value={name}
+              onChange={handleNameChange}
+              className="w-full px-3 py-2 rounded border border-gray-300 focus:outline-none focus:border-blue-500"
+            />
+            {nameError && <p className="text-red-500 text-sm">{nameError}</p>}
+          </div>
+          <div className="mb-4">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={handleEmailChange}
+              className="w-full px-3 py-2 rounded border border-gray-300 focus:outline-none focus:border-blue-500"
+            />
+            {emailError && <p className="text-red-500 text-sm">{emailError}</p>}
+          </div>
+          <div className="mb-6">
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={handlePasswordChange}
+              className="w-full px-3 py-2 rounded border border-gray-300 focus:outline-none focus:border-blue-500"
+            />
+            {passwordError && (
+              <p className="text-red-500 text-sm">{passwordError}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="bg-orange-600 hover:bg-orange-700 text-white rounded-md px-4 py-2 w-full font-bold"
+            onClick={handleSubmit}
+          >
+            Submit
+          </button>
+          <p className="text-gray-600 mt-4 text-center">
+            Already have an account?
+            <Link to="/login" className="text-blue-500 font-bold">
+              Log In
+            </Link>
+          </p>
+        </form>
       </div>
     </div>
   );

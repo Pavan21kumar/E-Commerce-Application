@@ -1,11 +1,12 @@
 import React from 'react'
 
-function Account() {
+function Order() {
   return (
     <div>
-      Account
+      Order
     </div>
   )
 }
 
-export default Account
+export default Order
+Order
