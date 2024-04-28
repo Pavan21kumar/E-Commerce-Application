@@ -25,6 +25,7 @@ import com.retail.ecommerce.entity.RefreshToken;
 import com.retail.ecommerce.entity.Seller;
 import com.retail.ecommerce.entity.User;
 import com.retail.ecommerce.enums.UserRole;
+import com.retail.ecommerce.exception.AccessTokenExpireException;
 import com.retail.ecommerce.exception.EmailAllreadyPresentException;
 import com.retail.ecommerce.exception.InvalidCreadentials;
 import com.retail.ecommerce.exception.InvalidEmailException;
@@ -32,6 +33,7 @@ import com.retail.ecommerce.exception.InvalidOTPException;
 import com.retail.ecommerce.exception.OtpExpaireException;
 import com.retail.ecommerce.exception.RegistrationSessionExpaireException;
 import com.retail.ecommerce.exception.RoleNotSpecifyException;
+import com.retail.ecommerce.exception.UserIsAllreadyLoginException;
 import com.retail.ecommerce.exception.UserIsNotLoginException;
 import com.retail.ecommerce.jwt.JwtService;
 import com.retail.ecommerce.mailservice.MailService;
@@ -187,8 +189,13 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest) {
+	public ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest authRequest, String accessToken,
+			String refreshToken) {
 
+		if (accessToken != null && refreshToken != null)
+			throw new UserIsAllreadyLoginException("You Allready Login....");
+		if (accessToken == null && refreshToken != null || !accessTokenRepo.existsByToken(accessToken))
+			throw new AccessTokenExpireException("your Accestone expire please Regenerate Your AccessToken");
 		String username = authRequest.getEmail().split("@")[0];
 		Authentication authenticate = authenticationManager
 				.authenticate(new UsernamePasswordAuthenticationToken(username, authRequest.getPassword()));
@@ -198,12 +205,12 @@ public class AuthServiceImpl implements AuthService {
 
 		HttpHeaders headers = new HttpHeaders();
 		userRepo.findByUsername(username).ifPresent(user -> {
-			Accesstoken accessToken = createAccessToken(user, headers);
-			RefreshToken refreshToken = createRefreshToken(user, headers);
-			accessToken.setUser(user);
-			refreshToken.setUser(user);
-			accessToken = accessTokenRepo.save(accessToken);
-			refreshToken = refreshTokenRepo.save(refreshToken);
+			Accesstoken at = createAccessToken(user, headers);
+			RefreshToken rt = createRefreshToken(user, headers);
+			at.setUser(user);
+			rt.setUser(user);
+			at = accessTokenRepo.save(at);
+			rt = refreshTokenRepo.save(rt);
 		});
 
 		return ResponseEntity.ok().headers(headers)
@@ -244,7 +251,7 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public ResponseEntity<SimpleResponseStructure> logout(String accessToken, String refreshToken) {
 
-		if (accessToken == null || refreshToken == null)
+		if (accessToken == null && refreshToken == null)
 			throw new UserIsNotLoginException("user is not Login");
 
 		HttpHeaders headers = new HttpHeaders();
@@ -294,9 +301,11 @@ public class AuthServiceImpl implements AuthService {
 
 		// check if the token is blocked.
 		if (refreshTokenRepo.existsByTokenAndIsBlocked(refreshToken, true)) {
+			// extract issuedAt from rt
 			Date date = jwtService.getDate(refreshToken);
 			String userName = jwtService.getUserName(refreshToken);
 			User user = userRepo.findByUsername(userName).get();
+			// validate if the date is before the current date.
 			if (date.before(new Date())) {
 				Accesstoken at = createAccessToken(user, headers);
 				RefreshToken rt = createRefreshToken(user, headers);
@@ -309,9 +318,6 @@ public class AuthServiceImpl implements AuthService {
 
 		}
 
-		// extract issuedAt from rt
-
-		// validate if the date is before the current date.
 		// if true issue new token, else use the same.
 
 //		refreshTokenRepo.findByToken(refreshToken).ifPresent(rt -> {

@@ -19,7 +19,8 @@ public interface AuthService {
 
 	ResponseEntity<ResponseStructure<UserResponse>> verifyOTP(OtpRequest otpRequest);
 
-	ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest loginRequest);
+	ResponseEntity<ResponseStructure<AuthResponse>> login(AuthRequest loginRequest, String accessToken,
+			String RefreshToken);
 
 	ResponseEntity<SimpleResponseStructure> logout(String accessToken, String refreshToken);
 

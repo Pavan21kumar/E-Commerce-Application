@@ -17,4 +17,6 @@ public interface AccessTokenRepo extends JpaRepository<Accesstoken, Integer> {
 
 	List<Accesstoken> findAllByExpirationLessThan(LocalDateTime date);
 //	List<Accesstoken>	findAllByExpirationBetween(LocalDateTime date);
+
+	boolean existsByToken(String accessToken);
 }
