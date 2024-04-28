@@ -16,6 +16,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.lang.Maps;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 
 @Service
 public class JwtService {
@@ -29,12 +30,7 @@ public class JwtService {
 	@Value("${myapp.jwt.refresh.expairation}")
 	private long refreshExpairation;
 
-	private RefreshTokenRepo refreshTokenRepo;
 	
-	public JwtService(RefreshTokenRepo refreshTokenRepo) {
-		super();
-		this.refreshTokenRepo = refreshTokenRepo;
-	}
 
 	private Key getSignatureKey() {
 
@@ -75,9 +71,6 @@ public class JwtService {
 	public Date getDate(String token) {
 		return parseJwtClaims(token).getIssuedAt();
 	}
-//	public List<RefreshToken> getAllRefreshtoken()
-//	{
-//		
-//	}
-
+	
+	
 }

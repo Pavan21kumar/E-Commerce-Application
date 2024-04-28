@@ -284,7 +284,6 @@ public class AuthServiceImpl implements AuthService {
 
 				at.setBlocked(true);
 				accessTokenRepo.save(at);
-
 			});
 
 		}
@@ -293,29 +292,14 @@ public class AuthServiceImpl implements AuthService {
 		if (refreshToken == null)
 			throw new UserIsNotLoginException("user is not login");
 
-		refreshTokenRepo.findByToken(refreshToken).ifPresent(rt -> {
-
+		// check if the token is blocked.
+		if (refreshTokenRepo.existsByTokenAndIsBlocked(refreshToken, true)) {
 			Date date = jwtService.getDate(refreshToken);
-			System.out.println(date);
-			System.out.println(new Date().getDate());
-			User user = rt.getUser();
-			if (date.getDate() == (new Date().getDate())) {
-
-				Accesstoken at = createAccessToken(rt.getUser(), headers);
-				rt = createRefreshToken(rt.getUser(), headers);
-				at.setUser(user);
-				accessTokenRepo.save(at);
-
-			} else {
-				String token = jwtService.generateRefreshToken(rt.getUser().getUsername(),
-						rt.getUser().getRole().name());
-				String accesstoken = jwtService.generateRefreshToken(rt.getUser().getUsername(),
-						rt.getUser().getRole().name());
-				rt.setBlocked(true);
-				refreshTokenRepo.save(rt);
-
-				Accesstoken at = createAccessToken(rt.getUser(), headers);
-				rt = createRefreshToken(rt.getUser(), headers);
+			String userName = jwtService.getUserName(refreshToken);
+			User user = userRepo.findByUsername(userName).get();
+			if (date.before(new Date())) {
+				Accesstoken at = createAccessToken(user, headers);
+				RefreshToken rt = createRefreshToken(user, headers);
 				at.setUser(user);
 				rt.setUser(user);
 				accessTokenRepo.save(at);
@@ -323,7 +307,46 @@ public class AuthServiceImpl implements AuthService {
 
 			}
 
-		});
+		}
+
+		// extract issuedAt from rt
+
+		// validate if the date is before the current date.
+		// if true issue new token, else use the same.
+
+//		refreshTokenRepo.findByToken(refreshToken).ifPresent(rt -> {
+//
+//			Date date = jwtService.getDate(refreshToken);
+////			System.out.println(date);
+////			System.out.println(new Date().getDate());
+//			User user = rt.getUser();
+//			if (date.getDate() == (new Date().getDate())) {
+//
+//				Accesstoken at = createAccessToken(rt.getUser(), headers);
+//
+//				headers.add(HttpHeaders.SET_COOKIE, "rt");
+//				// rt = createRefreshToken(rt.getUser(), headers);
+//				at.setUser(user);
+//				accessTokenRepo.save(at);
+////				username = user.getUsername();
+//
+//			} else {
+//
+//				rt.setBlocked(true);
+//				refreshTokenRepo.save(rt);
+//
+//				Accesstoken at = createAccessToken(rt.getUser(), headers);
+//				rt = createRefreshToken(rt.getUser(), headers);
+//				at.setUser(user);
+//				rt.setUser(user);
+////				username = user.getUsername();
+//				accessTokenRepo.save(at);
+//				refreshTokenRepo.save(rt);
+//
+//			}
+//
+//		});
+
 		String username = jwtService.getUserName(refreshToken);
 
 		return ResponseEntity.ok().headers(headers)
