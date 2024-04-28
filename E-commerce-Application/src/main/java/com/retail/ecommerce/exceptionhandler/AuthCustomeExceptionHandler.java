@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.retail.ecommerce.exception.AccessTokenExpireException;
 import com.retail.ecommerce.exception.EmailAllreadyPresentException;
 import com.retail.ecommerce.exception.InvalidCreadentials;
 import com.retail.ecommerce.exception.InvalidEmailException;
@@ -16,6 +17,7 @@ import com.retail.ecommerce.exception.OtpExpaireException;
 import com.retail.ecommerce.exception.RegistrationSessionExpaireException;
 import com.retail.ecommerce.exception.RoleNotSpecifyException;
 import com.retail.ecommerce.exception.UserAllreadyPresentException;
+import com.retail.ecommerce.exception.UserIsAllreadyLoginException;
 import com.retail.ecommerce.exception.UserIsNotLoginException;
 import com.retail.ecommerce.util.ErrorStructure;
 
@@ -77,29 +79,38 @@ public class AuthCustomeExceptionHandler {
 				.setMessage("please check Network.........").setRootCouse(e.getMessage()));
 	}
 
-	@ExceptionHandler // InvalidCreadentials
+	@ExceptionHandler
 	public ResponseEntity<ErrorStructure<String>> handlingMailConnectException(MailConnectException e) {
 		return ResponseEntity.badRequest().body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
 				.setMessage("please check Network.........").setRootCouse(e.getMessage()));
 	}
 
-	@ExceptionHandler // UserIsNotLoginException
+	@ExceptionHandler
 	public ResponseEntity<ErrorStructure<String>> handlingInvalidCreadentialsException(InvalidCreadentials e) {
 		return ResponseEntity.badRequest()
 				.body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
 						.setMessage("Invalid Creadentials.. please enter correct Details...........")
 						.setRootCouse(e.getMessage()));
 	}
-//InvalidCreadentials
-	@ExceptionHandler // UserIsNotLoginException
+
+	@ExceptionHandler
 	public ResponseEntity<ErrorStructure<String>> handlingUserIsNotLoginException(UserIsNotLoginException e) {
 		return ResponseEntity.badRequest().body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
 				.setMessage("User Is Not Login. please Login First.............").setRootCouse(e.getMessage()));
 	}
-//	@ExceptionHandler // UserIsNotLoginException
-//	public ResponseEntity<ErrorStructure<String>> handlingUserIsNotLoginException(InvalidCreadentials e) {
-//		return ResponseEntity.badRequest().body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
-//				.setMessage("User Is Not Login. please Login First.............").setRootCouse(e.getMessage()));
-//	}
+
+	@ExceptionHandler
+	public ResponseEntity<ErrorStructure<String>> handlingUserIsAllreadyLoginException(UserIsAllreadyLoginException e) {
+		return ResponseEntity.badRequest().body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
+				.setMessage("User Is Allready Login.............").setRootCouse(e.getMessage()));
+	}
+
+	@ExceptionHandler
+	public ResponseEntity<ErrorStructure<String>> handlingAccessTokenExpireException(AccessTokenExpireException e) {
+		return ResponseEntity.badRequest()
+				.body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
+						.setMessage("AccessToken Is expired Please Re Generate AccessToken.............")
+						.setRootCouse(e.getMessage()));
+	}
 
 }

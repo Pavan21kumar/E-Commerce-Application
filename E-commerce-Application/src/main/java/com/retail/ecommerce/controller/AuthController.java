@@ -47,18 +47,25 @@ public class AuthController {
 //	}
 
 	@PostMapping("/login")
-	public ResponseEntity<ResponseStructure<AuthResponse>> login(@Valid @RequestBody AuthRequest loginRequest) {
-		return userService.login(loginRequest);
+	public ResponseEntity<ResponseStructure<AuthResponse>> login(@Valid @RequestBody AuthRequest loginRequest,
+			@CookieValue(name = "at", required = false) String accessToken,
+			@CookieValue(name = "rt", required = false) String refreshToken) {
+		return userService.login(loginRequest, accessToken, refreshToken);
 	}
 
 	@PostMapping("/logout")
-	public ResponseEntity<SimpleResponseStructure> logout(@CookieValue(name = "at",required = false)String accessToken,@CookieValue(name = "rt",required = false) String refreshToken ) {
-		return userService.logout(accessToken,refreshToken);
+	public ResponseEntity<SimpleResponseStructure> logout(
+			@CookieValue(name = "at", required = false) String accessToken,
+			@CookieValue(name = "rt", required = false) String refreshToken) {
+		return userService.logout(accessToken, refreshToken);
 	}
+
 	@PostMapping("/login/refresh")
-	public ResponseEntity<ResponseStructure<AuthResponse>>refreshToken(@CookieValue(name = "at",required = false)String accessToken,@CookieValue(name = "rt",required = false) String refreshToken)
-	{
-		return userService.refreshToken(accessToken,refreshToken);
-		
+	public ResponseEntity<ResponseStructure<AuthResponse>> refreshToken(
+			@CookieValue(name = "at", required = false) String accessToken,
+			@CookieValue(name = "rt", required = false) String refreshToken) {
+		return userService.refreshToken(accessToken, refreshToken);
+
 	}
+
 }
