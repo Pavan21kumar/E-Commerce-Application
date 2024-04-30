@@ -16,7 +16,6 @@ import com.retail.ecommerce.exception.PriorityNotSetException;
 import com.retail.ecommerce.repository.AddressRepo;
 import com.retail.ecommerce.repository.ContactRepo;
 import com.retail.ecommerce.requestdto.ContactsRequest;
-import com.retail.ecommerce.responsedto.AddressResponse;
 import com.retail.ecommerce.responsedto.UpdateContact;
 import com.retail.ecommerce.service.ContactService;
 import com.retail.ecommerce.util.ResponseStructure;
@@ -40,8 +39,6 @@ public class ContactServiceImpl implements ContactService {
 
 			if (contactRequests.size() > 2)
 				throw new ContactsFulledException("Cannot add more than two contacts at once.");
-
-			// throw new PriorityNotSetException("priority is Not Set..");
 			List<Contact> contacts = new ArrayList<>();
 			for (ContactsRequest request : contactRequests) {
 				contacts.add(mappToContact(request));

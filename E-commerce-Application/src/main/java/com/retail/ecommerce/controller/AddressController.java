@@ -1,18 +1,20 @@
 package com.retail.ecommerce.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.retail.ecommerce.enums.UserRole;
 import com.retail.ecommerce.requestdto.AddressRequest;
 import com.retail.ecommerce.responsedto.AddressContactsResponse;
 import com.retail.ecommerce.responsedto.AddressResponse;
+import com.retail.ecommerce.responsedto.AddressSellerResponse;
 import com.retail.ecommerce.responsedto.AddressUpdateResponse;
 import com.retail.ecommerce.service.AdderssService;
 import com.retail.ecommerce.util.ResponseStructure;
@@ -30,21 +32,22 @@ public class AddressController {
 
 	@PostMapping("/addAddress")
 	public ResponseEntity<ResponseStructure<AddressResponse>> addAddress(
-			@Valid @RequestBody AddressRequest addressRequest,
-			@CookieValue(name = "at", required = false) String accessToken,
-			@CookieValue(name = "rt", required = false) String refreshToken) {
-		return addressservice.addAddress(addressRequest, accessToken, refreshToken);
+			@Valid @RequestBody AddressRequest addressRequest) {
+		return addressservice.addAddress(addressRequest);
 
 	}
 
-	@GetMapping("/findAddress")
-	public ResponseEntity<ResponseStructure<AddressContactsResponse>> findAddressByUser(
-			@CookieValue(name = "at", required = false) String accessToken,
-			@CookieValue(name = "rt", required = false) String refreshToken) {
-		return addressservice.findAddress(accessToken, refreshToken);
+	@GetMapping("/{role}/findAddress")
+	public ResponseEntity<ResponseStructure<AddressSellerResponse>> findSellerAddress(@PathVariable UserRole role) {
+		return addressservice.findAddressBySeller(role);
 	}
 
-	@PostMapping("/{addressId}/updateAddress")
+	@GetMapping("/{role}/findCustomerAddress")
+	public ResponseEntity<ResponseStructure<AddressContactsResponse>> findCustomerAddress(@PathVariable UserRole role) {
+		return addressservice.findCustomerAddress(role);
+	}
+
+	@PutMapping("/{addressId}/updateAddress")
 	public ResponseEntity<ResponseStructure<AddressUpdateResponse>> updateAddress(
 			@Valid @RequestBody AddressRequest addressRequest, @PathVariable int addressId) {
 		return addressservice.updateAddress(addressRequest, addressId);

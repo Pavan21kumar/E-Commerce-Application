@@ -6,6 +6,9 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.retail.ecommerce.entity.Address;
@@ -19,6 +22,9 @@ import com.retail.ecommerce.exception.AddressAllreadyAddedException;
 import com.retail.ecommerce.exception.AddressLimitException;
 import com.retail.ecommerce.exception.AddressTypeIsNullException;
 import com.retail.ecommerce.exception.AddressnotFoundByIdException;
+import com.retail.ecommerce.exception.InvalidRoleForThisCustomerException;
+import com.retail.ecommerce.exception.InvalidSellerRoleException;
+import com.retail.ecommerce.exception.NoAddressFoundException;
 import com.retail.ecommerce.exception.PleaseGiveRefreshAccessTokenRequest;
 import com.retail.ecommerce.exception.UserIsNotLoginException;
 import com.retail.ecommerce.jwt.JwtService;
@@ -30,6 +36,7 @@ import com.retail.ecommerce.requestdto.AddressRequest;
 import com.retail.ecommerce.responsedto.AddressContactResponse;
 import com.retail.ecommerce.responsedto.AddressContactsResponse;
 import com.retail.ecommerce.responsedto.AddressResponse;
+import com.retail.ecommerce.responsedto.AddressSellerResponse;
 import com.retail.ecommerce.responsedto.AddressUpdateResponse;
 import com.retail.ecommerce.service.AdderssService;
 import com.retail.ecommerce.util.ResponseStructure;
@@ -49,17 +56,18 @@ public class AddAddressServiceImpl implements AdderssService {
 	private ResponseStructure<AddressResponse> responseStructure;
 	private ResponseStructure<AddressContactsResponse> addressContactStructure;
 	private ResponseStructure<AddressUpdateResponse> updateresponse;
+	private ResponseStructure<AddressSellerResponse> sellerResponse;
 
 	@Override
-	public ResponseEntity<ResponseStructure<AddressResponse>> addAddress(AddressRequest addressRequest,
-			String accessToken, String refreshToken) {
+	public ResponseEntity<ResponseStructure<AddressResponse>> addAddress(AddressRequest addressRequest) {
 
-		if (accessToken == null || refreshToken == null)
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (!authentication.isAuthenticated())
 			throw new UserIsNotLoginException("user is not Login...........");
 		if (!addressRequest.getAddressType().equals(AddressType.PRIMARY)
 				&& !addressRequest.getAddressType().equals(AddressType.ADDITIONAL))
 			throw new AddressTypeIsNullException("AddressType Is Not Specified");
-		String userName = jwtService.getUserName(refreshToken);
+		String userName = authentication.getName();
 		User user = userRepo.findByUsername(userName).get();
 		Address address = null;
 		if (user.getRole().equals(UserRole.SELLER)) {
@@ -76,7 +84,12 @@ public class AddAddressServiceImpl implements AdderssService {
 			if (customer.getAddresses().size() >= 5)
 				throw new AddressLimitException("You Allready Reached Limit Of Adding Addresses...");
 			address = addressRepo.save(mapToAddress(addressRequest));
-			address.setCustomer(customer);
+			if (customer.getAddresses() == null) {
+				customer.setAddresses(Arrays.asList(address));
+			} else {
+				customer.getAddresses().add(address);
+			}
+
 			customerRepo.save(customer);
 			addressRepo.save(address);
 
@@ -100,49 +113,35 @@ public class AddAddressServiceImpl implements AdderssService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<AddressContactsResponse>> findAddress(String accessToken,
-			String refreshToken) {
+	public ResponseEntity<ResponseStructure<AddressSellerResponse>> findAddressBySeller(UserRole role) {
 
-		if (accessToken == null && refreshToken != null)
-			throw new PleaseGiveRefreshAccessTokenRequest("");
-		if (accessToken == null && refreshToken == null)
-			throw new UserIsNotLoginException("user is not Login...........");
-		String userName = jwtService.getUserName(accessToken);
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (!authentication.isAuthenticated())
+			throw new UserIsNotLoginException("user is Not Loged In");
+		String userName = authentication.getName();
 		User user = userRepo.findByUsername(userName).get();
-		if (user.getRole().equals(UserRole.SELLER)) {
-			Seller seller = (Seller) user;
-			Address address = seller.getAddress();
-			List<Contact> contact = address.getContact();
-			return ResponseEntity.ok(addressContactStructure.setStatusCode(HttpStatus.OK.value())
-					.setMessage("Data Found").setData(mapToAddressContactResponse(address, contact)));
-		} else {
-			Customer customer = (Customer) user;
-			List<Address> addresses = customer.getAddresses();
-			return ResponseEntity.ok(addressContactStructure.setStatusCode(HttpStatus.OK.value())
-					.setMessage("Data Found").setData(mapToAddressContactResponse(addresses)));
-		}
+		if (!user.getRole().equals(role))
+			throw new InvalidSellerRoleException("User Role Not ,match with The Specifing Role..");
+		Seller seller = (Seller) user;
+		Address address = seller.getAddress();
+		if (address == null)
+			throw new NoAddressFoundException("No Address Added ...");
+		List<Contact> contact = address.getContact();
+		return ResponseEntity.ok(sellerResponse.setStatusCode(HttpStatus.OK.value()).setMessage("Data Found")
+				.setData(mapToSellerResponse(address, contact)));
 
 	}
 
-	// if it is seller
-	private AddressContactsResponse mapToAddressContactResponse(Address address, List<Contact> contact) {
+	private AddressSellerResponse mapToSellerResponse(Address address, List<Contact> contacts) {
 
-		return AddressContactsResponse.builder().address(mapToAddressContacts(address, contact)).build();
-
-	}
-
-	private List<AddressContactResponse> mapToAddressContacts(Address address, List<Contact> contact) {
-
-		List<AddressContactResponse> list = new ArrayList<>();
-		AddressContactResponse build = AddressContactResponse.builder().addressId(address.getAddressId())
+		return AddressSellerResponse.builder().addressId(address.getAddressId())
 				.streetAddress(address.getStreetAddress()).streetAdressAditional(address.getStreetAdressAditional())
 				.city(address.getCity()).state(address.getState()).country(address.getCountry())
-				.pincode(address.getPincode()).contact(contact).addressType(address.getAddressType()).build();
-		list.add(build);
-
-		return list;
+				.pincode(address.getPincode()).addressType(address.getAddressType()).contacts(contacts).build();
 	}
 
+//----------------------------------------------------------------------------------------------
 	private AddressContactsResponse mapToAddressContactResponse(List<Address> addresses) {
 
 		return AddressContactsResponse.builder().address(mapToAddresContact(addresses)).build();
@@ -161,6 +160,27 @@ public class AddAddressServiceImpl implements AdderssService {
 
 		}
 		return list;
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<AddressContactsResponse>> findCustomerAddress(UserRole role) {
+
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (!authentication.isAuthenticated())
+			throw new UserIsNotLoginException("user is Not Loged In");
+		String userName = authentication.getName();
+		User user = userRepo.findByUsername(userName).get();
+		System.out.println(user.getRole().equals(role));
+		System.out.println(role);
+		if (!user.getRole().equals(role))
+			throw new InvalidRoleForThisCustomerException("User role Is Diffrent");
+		Customer customer = (Customer) user;
+		List<Address> addresses = customer.getAddresses();
+		if (addresses == null)
+			throw new NoAddressFoundException("No Address Added ...");
+		return ResponseEntity.ok(addressContactStructure.setStatusCode(HttpStatus.OK.value()).setMessage("Data Found")
+				.setData(mapToAddressContactResponse(addresses)));
 	}
 
 	@Override
@@ -192,8 +212,8 @@ public class AddAddressServiceImpl implements AdderssService {
 		address.setCountry(addressRequest.getCountry());
 		address.setPincode(addressRequest.getPincode());
 		address.setContact(address.getContact());
-		address.setCustomer(address.getCustomer());
 		return address;
 
 	}
+
 }
