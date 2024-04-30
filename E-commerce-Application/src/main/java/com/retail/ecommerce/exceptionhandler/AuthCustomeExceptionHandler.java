@@ -14,6 +14,7 @@ import com.retail.ecommerce.exception.InvalidCreadentials;
 import com.retail.ecommerce.exception.InvalidEmailException;
 import com.retail.ecommerce.exception.InvalidOTPException;
 import com.retail.ecommerce.exception.OtpExpaireException;
+import com.retail.ecommerce.exception.PleaseGiveRefreshAccessTokenRequest;
 import com.retail.ecommerce.exception.RegistrationSessionExpaireException;
 import com.retail.ecommerce.exception.RoleNotSpecifyException;
 import com.retail.ecommerce.exception.UserAllreadyPresentException;
@@ -107,6 +108,15 @@ public class AuthCustomeExceptionHandler {
 
 	@ExceptionHandler
 	public ResponseEntity<ErrorStructure<String>> handlingAccessTokenExpireException(AccessTokenExpireException e) {
+		return ResponseEntity.badRequest()
+				.body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
+						.setMessage("AccessToken Is expired Please Re Generate AccessToken.............")
+						.setRootCouse(e.getMessage()));
+	}
+
+	@ExceptionHandler
+	public ResponseEntity<ErrorStructure<String>> handlingPleaseGiveRefreshAccessTokenRequest(
+			PleaseGiveRefreshAccessTokenRequest e) {
 		return ResponseEntity.badRequest()
 				.body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
 						.setMessage("AccessToken Is expired Please Re Generate AccessToken.............")

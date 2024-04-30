@@ -40,7 +40,7 @@ public class Address {
 	private AddressType addressType;
 
 	@JsonIgnore
-	@OneToMany(fetch = FetchType.EAGER)
+	@OneToMany
 	private List<Contact> contact;
 
 	@ManyToOne

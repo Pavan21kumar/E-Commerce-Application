@@ -11,11 +11,10 @@ public class ECommerceApplication {
 	private String name;
 
 	public static void main(String[] args) {
-		ConfigurableApplicationContext run = SpringApplication.run(ECommerceApplication.class, args);
-		
-		ECommerceApplication bean = run.getBean(ECommerceApplication.class);
-		
-		
+		SpringApplication.run(ECommerceApplication.class, args);
+
+		// ECommerceApplication bean = run.getBean(ECommerceApplication.class);
+
 	}
 
 }

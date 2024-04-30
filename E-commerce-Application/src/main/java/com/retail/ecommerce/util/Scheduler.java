@@ -27,7 +27,7 @@ public class Scheduler {
 	@Scheduled(fixedDelay = 60 * 60 * 1000l)
 	public void removeAccessTokenScheduling() {
 
-		List<Accesstoken> list = accessTokenRepo.findAllByExpirationLessThan(LocalDateTime.now().minusHours(1)).stream()
+		List<Accesstoken> list = accessTokenRepo.findAllByExpirationLessThan(LocalDateTime.now()).stream()
 				.map(accessToken -> {
 					return accessToken;
 				}).collect(Collectors.toList());
@@ -40,8 +40,8 @@ public class Scheduler {
 	@Scheduled(fixedDelay = 60 * 60 * 1000l)
 	public void removeRefreshTokenScheduling() {
 
-		List<RefreshToken> refreshTokenList = refreshTokenRepo
-				.findAllByExpirationLessThan(LocalDateTime.now().minusDays(15)).stream().map(refreshToken -> {
+		List<RefreshToken> refreshTokenList = refreshTokenRepo.findAllByExpirationLessThan(LocalDateTime.now()).stream()
+				.map(refreshToken -> {
 					return refreshToken;
 				}).collect(Collectors.toList());
 		if (!refreshTokenList.isEmpty()) {

@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 
 import com.retail.ecommerce.requestdto.ContactsRequest;
 import com.retail.ecommerce.responsedto.AddressResponse;
+import com.retail.ecommerce.responsedto.UpdateContact;
+import com.retail.ecommerce.util.ResponseStructure;
 import com.retail.ecommerce.util.SimpleResponseStructure;
 
 import jakarta.validation.Valid;
@@ -13,5 +15,7 @@ import jakarta.validation.Valid;
 public interface ContactService {
 
 	ResponseEntity<SimpleResponseStructure> addContact(@Valid List<ContactsRequest> contactRequests, int addressId);
+
+	ResponseEntity<ResponseStructure<UpdateContact>> updateContact(ContactsRequest contactsRequest, int contactId);
 
 }
