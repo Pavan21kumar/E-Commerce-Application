@@ -15,6 +15,6 @@ import lombok.Setter;
 public class Customer extends User {
 
 	@JsonIgnore
-	@OneToMany(mappedBy = "customer")
+	@OneToMany
 	private List<Address> addresses;
 }

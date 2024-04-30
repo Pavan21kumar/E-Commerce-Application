@@ -43,7 +43,4 @@ public class Address {
 	@OneToMany
 	private List<Contact> contact;
 
-	@ManyToOne
-	private Customer customer;
-
 }
