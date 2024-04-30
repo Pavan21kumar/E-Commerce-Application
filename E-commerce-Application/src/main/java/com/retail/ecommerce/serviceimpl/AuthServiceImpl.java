@@ -31,6 +31,7 @@ import com.retail.ecommerce.exception.InvalidCreadentials;
 import com.retail.ecommerce.exception.InvalidEmailException;
 import com.retail.ecommerce.exception.InvalidOTPException;
 import com.retail.ecommerce.exception.OtpExpaireException;
+import com.retail.ecommerce.exception.PleaseGiveRefreshAccessTokenRequest;
 import com.retail.ecommerce.exception.RegistrationSessionExpaireException;
 import com.retail.ecommerce.exception.RoleNotSpecifyException;
 import com.retail.ecommerce.exception.UserIsAllreadyLoginException;
@@ -50,13 +51,7 @@ import com.retail.ecommerce.service.AuthService;
 import com.retail.ecommerce.util.ResponseStructure;
 import com.retail.ecommerce.util.SimpleResponseStructure;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -194,7 +189,8 @@ public class AuthServiceImpl implements AuthService {
 
 		if (accessToken != null && refreshToken != null)
 			throw new UserIsAllreadyLoginException("You Allready Login....");
-		if (accessToken == null && refreshToken != null || !accessTokenRepo.existsByToken(accessToken))
+		// || !accessTokenRepo.existsByToken(accessToken)
+		if (accessToken == null && refreshToken != null)
 			throw new AccessTokenExpireException("your Accestone expire please Regenerate Your AccessToken");
 		String username = authRequest.getEmail().split("@")[0];
 		Authentication authenticate = authenticationManager
@@ -231,15 +227,16 @@ public class AuthServiceImpl implements AuthService {
 		String token = jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
 		headers.add(HttpHeaders.SET_COOKIE, configureCookie("at", token, accessExpairation));
 
-		return Accesstoken.builder().token(token).expiration(LocalDateTime.now()).isBlocked(false).build();
+		return Accesstoken.builder().token(token).expiration(LocalDateTime.now().plusHours(1)).isBlocked(false).build();
 	}
 
 	private RefreshToken createRefreshToken(User user, HttpHeaders headers) {
 
-		String token = jwtService.generateAccessToken(user.getUsername(), user.getRole().name());
+		String token = jwtService.generateRefreshToken(user.getUsername(), user.getRole().name());
 		headers.add(HttpHeaders.SET_COOKIE, configureCookie("rt", token, refreshExpairation));
 
-		return RefreshToken.builder().token(token).expiration(LocalDateTime.now()).isBlocked(false).build();
+		return RefreshToken.builder().token(token).expiration(LocalDateTime.now().plusDays(15)).isBlocked(false)
+				.build();
 
 	}
 
@@ -254,24 +251,28 @@ public class AuthServiceImpl implements AuthService {
 		if (accessToken == null && refreshToken == null)
 			throw new UserIsNotLoginException("user is not Login");
 
+		if (refreshToken == null)
+			throw new UserIsNotLoginException("user is not Login");
 		HttpHeaders headers = new HttpHeaders();
 
-		accessTokenRepo.findByToken(accessToken).ifPresent(access -> {
+		if (accessToken == null)
+			throw new PleaseGiveRefreshAccessTokenRequest("give refresh AccessToken Request");
+		refreshTokenRepo.findByToken(refreshToken).ifPresent(refresh -> {
+			accessTokenRepo.findByToken(accessToken).ifPresent(access -> {
 
-			refreshTokenRepo.findByToken(refreshToken).ifPresent(refresh -> {
-
-				access.setBlocked(true);
-				accessTokenRepo.save(access);
 				refresh.setBlocked(true);
 				refreshTokenRepo.save(refresh);
-
-				removeAccess("at", headers);
-				removeAccess("rt", headers);
-
+				access.setBlocked(true);
+				accessTokenRepo.save(access);
 			});
 		});
+
+		removeAccess("at", headers);
+		removeAccess("rt", headers);
+
 		return ResponseEntity.ok().headers(headers)
 				.body(simpleResponseStructure.setMessage("LogOut Sucessfully...").setStatusCode(HttpStatus.OK.value()));
+
 	}
 
 	private void removeAccess(String value, HttpHeaders headers) {
@@ -292,72 +293,40 @@ public class AuthServiceImpl implements AuthService {
 				at.setBlocked(true);
 				accessTokenRepo.save(at);
 			});
-
 		}
-
 		HttpHeaders headers = new HttpHeaders();
 		if (refreshToken == null)
 			throw new UserIsNotLoginException("user is not login");
-
 		// check if the token is blocked.
-		if (refreshTokenRepo.existsByTokenAndIsBlocked(refreshToken, true)) {
-			// extract issuedAt from rt
-			Date date = jwtService.getDate(refreshToken);
-			String userName = jwtService.getUserName(refreshToken);
-			User user = userRepo.findByUsername(userName).get();
-			// validate if the date is before the current date.
-			if (date.before(new Date())) {
-				Accesstoken at = createAccessToken(user, headers);
-				RefreshToken rt = createRefreshToken(user, headers);
-				at.setUser(user);
-				rt.setUser(user);
+		if (refreshTokenRepo.existsByTokenAndIsBlocked(refreshToken, true))
+			throw new UserIsNotLoginException("User Is Not LogedIn...");
+		// extract issuedAt from rt
+		return refreshTokenRepo.findByToken(refreshToken).map(refresh -> {
+			System.out.println("extracting credentials");
+			Date date = jwtService.getDate(refresh.getToken());
+			LocalDateTime.now();
+			if (date.getDate() == new Date().getDate()) {
+				Accesstoken at = createAccessToken(refresh.getUser(), headers);
+				at.setUser(refresh.getUser());
+				accessTokenRepo.save(at);
+				RefreshToken rt = refreshTokenRepo.findByToken(refreshToken).get();
+				headers.add(HttpHeaders.SET_COOKIE, configureCookie("rt", rt.getToken(), refreshExpairation));
+
+			} else {
+				refresh.setBlocked(true);
+				refreshTokenRepo.save(refresh);
+				Accesstoken at = createAccessToken(refresh.getUser(), headers);
+				RefreshToken rt = createRefreshToken(refresh.getUser(), headers);
+				at.setUser(refresh.getUser());
+				rt.setUser(refresh.getUser());
 				accessTokenRepo.save(at);
 				refreshTokenRepo.save(rt);
-
 			}
+			return ResponseEntity.ok().headers(headers)
+					.body(authStucture.setStatusCode(HttpStatus.OK.value()).setMessage("token is generated..").setData(
+							mapToAuthResponse(refresh.getUser().getUsername(), accessExpairation, refreshExpairation)));
 
-		}
-
-		// if true issue new token, else use the same.
-
-//		refreshTokenRepo.findByToken(refreshToken).ifPresent(rt -> {
-//
-//			Date date = jwtService.getDate(refreshToken);
-////			System.out.println(date);
-////			System.out.println(new Date().getDate());
-//			User user = rt.getUser();
-//			if (date.getDate() == (new Date().getDate())) {
-//
-//				Accesstoken at = createAccessToken(rt.getUser(), headers);
-//
-//				headers.add(HttpHeaders.SET_COOKIE, "rt");
-//				// rt = createRefreshToken(rt.getUser(), headers);
-//				at.setUser(user);
-//				accessTokenRepo.save(at);
-////				username = user.getUsername();
-//
-//			} else {
-//
-//				rt.setBlocked(true);
-//				refreshTokenRepo.save(rt);
-//
-//				Accesstoken at = createAccessToken(rt.getUser(), headers);
-//				rt = createRefreshToken(rt.getUser(), headers);
-//				at.setUser(user);
-//				rt.setUser(user);
-////				username = user.getUsername();
-//				accessTokenRepo.save(at);
-//				refreshTokenRepo.save(rt);
-//
-//			}
-//
-//		});
-
-		String username = jwtService.getUserName(refreshToken);
-
-		return ResponseEntity.ok().headers(headers)
-				.body(authStucture.setStatusCode(HttpStatus.OK.value()).setMessage("token is generated..")
-						.setData(mapToAuthResponse(username, accessExpairation, refreshExpairation)));
+		}).orElseThrow(() -> new UserIsNotLoginException("user is not Login..."));
 	}
 
 }

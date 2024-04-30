@@ -1,14 +1,10 @@
 package com.retail.ecommerce.jwt;
 
 import java.security.Key;
+import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import com.retail.ecommerce.entity.RefreshToken;
-import com.retail.ecommerce.repository.RefreshTokenRepo;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -16,7 +12,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.lang.Maps;
 import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.Cookie;
 
 @Service
 public class JwtService {
@@ -50,6 +45,7 @@ public class JwtService {
 	}
 
 	public String generateRefreshToken(String userName, String role) {
+		System.out.println(LocalDateTime.now().plusSeconds(refreshExpairation/1000));
 		return generateToken(refreshExpairation, userName, role);
 	}
 

@@ -13,7 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ContactsRequest {
-	@Pattern(regexp = "^[a-zA-Z]+$", message = "only alphabates can accept")
+	@Pattern(regexp = "^[a-zA-Z ]+$", message = "only alphabates can accept")
 	@NotNull
 	private String name;
 	@NotNull

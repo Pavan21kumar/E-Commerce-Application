@@ -18,6 +18,7 @@ import com.retail.ecommerce.enums.UserRole;
 import com.retail.ecommerce.exception.AddressAllreadyAddedException;
 import com.retail.ecommerce.exception.AddressLimitException;
 import com.retail.ecommerce.exception.AddressTypeIsNullException;
+import com.retail.ecommerce.exception.AddressnotFoundByIdException;
 import com.retail.ecommerce.exception.PleaseGiveRefreshAccessTokenRequest;
 import com.retail.ecommerce.exception.UserIsNotLoginException;
 import com.retail.ecommerce.jwt.JwtService;
@@ -29,22 +30,25 @@ import com.retail.ecommerce.requestdto.AddressRequest;
 import com.retail.ecommerce.responsedto.AddressContactResponse;
 import com.retail.ecommerce.responsedto.AddressContactsResponse;
 import com.retail.ecommerce.responsedto.AddressResponse;
+import com.retail.ecommerce.responsedto.AddressUpdateResponse;
 import com.retail.ecommerce.service.AdderssService;
 import com.retail.ecommerce.util.ResponseStructure;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
 public class AddAddressServiceImpl implements AdderssService {
 
-	private AddressRepo addAddressRepo;
+	private AddressRepo addressRepo;
 	private JwtService jwtService;
 	private UserRegisterRepoository userRepo;
 	private SellerRepository sellerRepo;
 	private CustomerRepository customerRepo;
 	private ResponseStructure<AddressResponse> responseStructure;
 	private ResponseStructure<AddressContactsResponse> addressContactStructure;
+	private ResponseStructure<AddressUpdateResponse> updateresponse;
 
 	@Override
 	public ResponseEntity<ResponseStructure<AddressResponse>> addAddress(AddressRequest addressRequest,
@@ -62,7 +66,7 @@ public class AddAddressServiceImpl implements AdderssService {
 			Seller seller = (Seller) user;
 			if (seller.getAddress() != null)
 				throw new AddressAllreadyAddedException("Address Is Allready Added...");
-			address = addAddressRepo.save(mapToAddress(addressRequest));
+			address = addressRepo.save(mapToAddress(addressRequest));
 			seller.setAddress(address);
 			sellerRepo.save(seller);
 		} else {
@@ -71,10 +75,10 @@ public class AddAddressServiceImpl implements AdderssService {
 
 			if (customer.getAddresses().size() >= 5)
 				throw new AddressLimitException("You Allready Reached Limit Of Adding Addresses...");
-			address = addAddressRepo.save(mapToAddress(addressRequest));
+			address = addressRepo.save(mapToAddress(addressRequest));
 			address.setCustomer(customer);
 			customerRepo.save(customer);
-			addAddressRepo.save(address);
+			addressRepo.save(address);
 
 		}
 
@@ -157,5 +161,39 @@ public class AddAddressServiceImpl implements AdderssService {
 
 		}
 		return list;
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<AddressUpdateResponse>> updateAddress(AddressRequest addressRequest,
+			int addressId) {
+		return addressRepo.findById(addressId).map(address -> {
+			address = mapToAddress(address, addressRequest);
+			addressRepo.save(address);
+			return ResponseEntity.ok(updateresponse.setStatusCode(HttpStatus.OK.value())
+					.setMessage("Address Is Updated").setData(mapToAddressUpdateResponse(address)));
+		}).orElseThrow(() -> new AddressnotFoundByIdException("address not found by given id....."));
+
+	}
+
+	private AddressUpdateResponse mapToAddressUpdateResponse(Address address) {
+
+		return AddressUpdateResponse.builder().addressId(address.getAddressId())
+				.streetAddress(address.getStreetAddress()).streetAdressAditional(address.getStreetAdressAditional())
+				.city(address.getCity()).state(address.getState()).country(address.getCountry())
+				.pincode(address.getPincode()).addressType(address.getAddressType()).build();
+	}
+
+	private Address mapToAddress(Address address, AddressRequest addressRequest) {
+		address.setAddressId(address.getAddressId());
+		address.setStreetAddress(addressRequest.getStreetAddress());
+		address.setStreetAdressAditional(addressRequest.getStreetAdressAditional());
+		address.setCity(addressRequest.getCity());
+		address.setState(addressRequest.getState());
+		address.setCountry(addressRequest.getCountry());
+		address.setPincode(addressRequest.getPincode());
+		address.setContact(address.getContact());
+		address.setCustomer(address.getCustomer());
+		return address;
+
 	}
 }
