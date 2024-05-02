@@ -16,8 +16,8 @@ import lombok.Setter;
 public class AuthResponse {
 	private int userId;
 	private String username;
-	private UserRole role;
-	private long accessExpairation;
-	private long refreshExpairation;
+	private UserRole userRole;
+	private long accessExpiration;
+	private long refreshExpiration;
 
 }

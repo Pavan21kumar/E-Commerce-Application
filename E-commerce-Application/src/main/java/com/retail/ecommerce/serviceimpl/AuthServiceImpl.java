@@ -218,8 +218,8 @@ public class AuthServiceImpl implements AuthService {
 
 		User user = userRepo.findByUsername(username).get();
 
-		return AuthResponse.builder().userId(user.getUserId()).username(user.getUsername()).role(user.getRole())
-				.accessExpairation(accessExpairation).refreshExpairation(refreshExpairation).build();
+		return AuthResponse.builder().userId(user.getUserId()).username(user.getUsername()).userRole(user.getRole())
+				.accessExpiration(accessExpairation).refreshExpiration(refreshExpairation).build();
 	}
 
 	private Accesstoken createAccessToken(User user, HttpHeaders headers) {
