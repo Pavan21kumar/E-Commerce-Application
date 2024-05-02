@@ -12,4 +12,6 @@ public interface ProductService {
 
 	ResponseEntity<ResponseStructure<ProductResponse>> updateProduct(ProductRequest productRequest, int productId);
 
+	ResponseEntity<ResponseStructure<ProductResponse>> findProduct(int productId);
+
 }

@@ -120,4 +120,13 @@ public class ProductServiceimpl implements ProductService {
 		return product;
 	}
 
+	@Override
+	public ResponseEntity<ResponseStructure<ProductResponse>> findProduct(int productId) {
+
+		return productRepo.findById(productId).map(product -> {
+			return ResponseEntity.status(HttpStatus.FOUND).body(productResponse.setStatusCode(HttpStatus.FOUND.value())
+					.setMessage("Product Is Found..").setData(MapToProductResponse(product)));
+		}).orElseThrow(() -> new ProductIsNotFoundException("product Is Not Found........"));
+	}
+
 }

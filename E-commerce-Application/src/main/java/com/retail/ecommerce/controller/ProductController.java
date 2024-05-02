@@ -2,6 +2,7 @@ package com.retail.ecommerce.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -35,5 +36,10 @@ public class ProductController {
 	@PutMapping("/{productId}/products")
 	public ResponseEntity<ResponseStructure<ProductResponse>> updateProduct(@RequestBody ProductRequest productRequest,@PathVariable int productId){
 		return productService.updateProduct(productRequest,productId);
+	}
+	@GetMapping("/{productId}/products")
+	public ResponseEntity<ResponseStructure<ProductResponse>> findProduct(@PathVariable int productId){
+		
+		return productService.findProduct(productId);
 	}
 }
