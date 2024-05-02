@@ -10,4 +10,6 @@ public interface ProductService {
 
 	ResponseEntity<ResponseStructure<ProductResponse>> addProduct(ProductRequest productRequest);
 
+	ResponseEntity<ResponseStructure<ProductResponse>> updateProduct(ProductRequest productRequest, int productId);
+
 }
