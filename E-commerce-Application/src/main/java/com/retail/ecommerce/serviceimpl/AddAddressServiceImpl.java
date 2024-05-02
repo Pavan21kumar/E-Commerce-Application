@@ -69,9 +69,9 @@ public class AddAddressServiceImpl implements AdderssService {
 				&& !addressRequest.getAddressType().equals(AddressType.ADDITIONAL))
 			throw new AddressTypeIsNullException("AddressType Is Not Specified");
 		String userName = authentication.getName();
-		System.out.println(
-				userName + "---------------------------------------------------------------------------------------");
 		User user = userRepo.findByUsername(userName).get();
+		if (user == null)
+			throw new AccessTokenExpireException("Access token is Expired...");
 		Address address = null;
 		if (user.getRole().equals(UserRole.SELLER)) {
 			Seller seller = (Seller) user;
@@ -125,7 +125,7 @@ public class AddAddressServiceImpl implements AdderssService {
 		String userName = authentication.getName();
 		User user = userRepo.findByUsername(userName).get();
 		if (user == null)
-			throw new AccessTokenExpireException("Access");
+			throw new AccessTokenExpireException("Access token is Expired...");
 		if (!user.getRole().equals(role))
 			throw new InvalidSellerRoleException("User Role Not ,match with The Specifing Role..");
 		Seller seller = (Seller) user;
