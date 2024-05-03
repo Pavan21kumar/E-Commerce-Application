@@ -1,6 +1,7 @@
 package com.retail.ecommerce.requestdto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,6 +15,7 @@ public class ProductRequest {
 	@NotNull
 	private double price;
 	@NotNull
+	@Positive
 	private int quantity;
 	// private AvailabilityStatus status;
 }
