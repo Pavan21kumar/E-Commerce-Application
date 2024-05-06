@@ -16,13 +16,13 @@ import com.retail.ecommerce.exception.CoverImageallreadyAddedException;
 import com.retail.ecommerce.exception.ImageNotFoundByIdException;
 import com.retail.ecommerce.exception.ImageTypeNotCorrectexception;
 import com.retail.ecommerce.exception.ImageTypeNotSpecifiedException;
+import com.retail.ecommerce.exception.NoFileFoundException;
 import com.retail.ecommerce.exception.ProductIsNotBelongsToTheSellerException;
 import com.retail.ecommerce.exception.ProductIsNotFoundException;
 import com.retail.ecommerce.repository.ImageMongodbRepository;
 import com.retail.ecommerce.repository.ProductRepository;
 import com.retail.ecommerce.repository.SellerRepository;
 import com.retail.ecommerce.repository.UserRegisterRepoository;
-import com.retail.ecommerce.responsedto.ImageResponse;
 import com.retail.ecommerce.service.Imageservice;
 import com.retail.ecommerce.util.ResponseStructure;
 
@@ -46,9 +46,14 @@ public class ImgaeServiceImpl implements Imageservice {
 				throw new ImageTypeNotSpecifiedException("imageType is Not Specified Please Provide Image Type...");
 			if (!sellerRepo.existsByProduct(product))
 				throw new ProductIsNotBelongsToTheSellerException("invalid prodct");
+			if (images.isEmpty())
+				throw new NoFileFoundException("no file found...............");
 			Image image = mapToImage(images, imageType);
 
-			System.out.println(MediaType.IMAGE_PNG);
+			// System.out.println(MediaType.IMAGE_PNG);
+			if (imageRepo.existsByProductIdAndImageTypes(productId, ImageTypes.COVER)
+					&& imageType.equalsIgnoreCase(ImageTypes.COVER.name()))
+				throw new CoverImageallreadyAddedException("cover image allready added....");
 			image.setProductId(product.getProductId());
 			imageRepo.save(image);
 

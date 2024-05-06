@@ -45,6 +45,7 @@ public class ProductServiceimpl implements ProductService {
 
 			Product product = mapToProduct(productRequest);
 			product.setStatus(setStatus(product.getQuantity()));
+			productRepo.save(product);
 			Seller seller = (Seller) user;
 			if (seller.getProduct() == null)
 				seller.setProduct(Arrays.asList(product));

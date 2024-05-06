@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.retail.ecommerce.exception.CoverImageallreadyAddedException;
 import com.retail.ecommerce.exception.ImageTypeNotCorrectexception;
 import com.retail.ecommerce.exception.ImageTypeNotSpecifiedException;
+import com.retail.ecommerce.exception.NoFileFoundException;
 import com.retail.ecommerce.util.ErrorStructure;
 
 import lombok.AllArgsConstructor;
@@ -36,5 +37,11 @@ public class AllImageCustomeExceptionHandler {
 			ImageTypeNotSpecifiedException e) {
 		return ResponseEntity.badRequest().body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
 				.setMessage(" imageType Is Not Present ").setRootCouse(e.getMessage()));
+	}
+
+	@ExceptionHandler
+	public ResponseEntity<ErrorStructure<String>> handlingINoFileFoundException(NoFileFoundException e) {
+		return ResponseEntity.badRequest().body(errorStructure.setStatusCode(HttpStatus.BAD_REQUEST.value())
+				.setMessage("  file  Is Not Present ").setRootCouse(e.getMessage()));
 	}
 }
