@@ -1,6 +1,7 @@
 package com.retail.ecommerce.entity;
 
 import com.retail.ecommerce.enums.AvailabilityStatus;
+import com.retail.ecommerce.enums.ProductCategory;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -30,4 +31,5 @@ public class Product {
 	private double price;
 	private int quantity;
 	private AvailabilityStatus status;
+	private ProductCategory category;
 }

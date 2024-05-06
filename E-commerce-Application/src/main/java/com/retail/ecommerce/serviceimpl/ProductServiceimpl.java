@@ -1,7 +1,10 @@
 package com.retail.ecommerce.serviceimpl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.retail.ecommerce.entity.Product;
 import com.retail.ecommerce.entity.Seller;
 import com.retail.ecommerce.enums.AvailabilityStatus;
+import com.retail.ecommerce.enums.ProductCategory;
 import com.retail.ecommerce.exception.AccessTokenExpireException;
 import com.retail.ecommerce.exception.ProductIsNotFoundException;
 import com.retail.ecommerce.exception.UserIsNotLoginException;
@@ -18,10 +22,18 @@ import com.retail.ecommerce.repository.ProductRepository;
 import com.retail.ecommerce.repository.SellerRepository;
 import com.retail.ecommerce.repository.UserRegisterRepoository;
 import com.retail.ecommerce.requestdto.ProductRequest;
+import com.retail.ecommerce.requestdto.SearchFilter;
 import com.retail.ecommerce.responsedto.ProductResponse;
 import com.retail.ecommerce.service.ProductService;
 import com.retail.ecommerce.util.ResponseStructure;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -32,6 +44,10 @@ public class ProductServiceimpl implements ProductService {
 	private UserRegisterRepoository userRepo;
 	private SellerRepository sellerRepo;
 	private ResponseStructure<ProductResponse> productResponse;
+	private ResponseStructure<List<ProductResponse>> listProductResponses;
+
+	@PersistenceContext
+	private EntityManager em;
 
 	@Override
 	public ResponseEntity<ResponseStructure<ProductResponse>> addProduct(ProductRequest productRequest) {
@@ -64,14 +80,14 @@ public class ProductServiceimpl implements ProductService {
 	private ProductResponse MapToProductResponse(Product product) {
 		return ProductResponse.builder().productId(product.getProductId()).productName(product.getProductName())
 				.description(product.getDescription()).price(product.getPrice()).quantity(product.getQuantity())
-				.status(product.getStatus()).build();
+				.status(product.getStatus()).category(product.getCategory()).build();
 	}
 
 	private Product mapToProduct(ProductRequest productRequest) {
 
 		return Product.builder().productName(productRequest.getProductName())
 				.description(productRequest.getDescription()).price(productRequest.getPrice())
-				.quantity(productRequest.getQuantity()).build();
+				.quantity(productRequest.getQuantity()).category(productRequest.getCategory()).build();
 	}
 
 	private AvailabilityStatus setStatus(int quantity) {
@@ -130,4 +146,29 @@ public class ProductServiceimpl implements ProductService {
 		}).orElseThrow(() -> new ProductIsNotFoundException("product Is Not Found........"));
 	}
 
+	@Override
+	public ResponseEntity<ResponseStructure<List<ProductResponse>>> getProducts(SearchFilter filters) {
+		Specification<Product> buildSpecification = new ProductSpecification(filters).buildSpecification();
+
+		CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+		CriteriaQuery<Product> createQuery = criteriaBuilder.createQuery(Product.class);
+		Root<Product> root = createQuery.from(Product.class);
+		createQuery.select(root);
+		Predicate predicate = buildSpecification.toPredicate(root, createQuery, criteriaBuilder);
+
+		createQuery.where(predicate);
+		TypedQuery<Product> createQuery2 = em.createQuery(createQuery);
+		List<Product> resultList = createQuery2.getResultList();
+		return ResponseEntity.ok(listProductResponses.setStatusCode(HttpStatus.OK.value()).setMessage("data is found")
+				.setData(mapToListProducts(resultList)));
+	}
+
+	private List<ProductResponse> mapToListProducts(List<Product> resultList) {
+		List<ProductResponse> listProducts = new ArrayList<>();
+		for (Product product : resultList) {
+			listProducts.add(MapToProductResponse(product));
+		}
+
+		return listProducts;
+	}
 }

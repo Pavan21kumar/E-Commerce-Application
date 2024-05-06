@@ -3,6 +3,7 @@ package com.retail.ecommerce.responsedto;
 import java.util.List;
 
 import com.retail.ecommerce.enums.AvailabilityStatus;
+import com.retail.ecommerce.enums.ProductCategory;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,5 +26,6 @@ public class ProductResponse {
 	private AvailabilityStatus status;
 	private List<String> immagesLinks;
 	private String coverImage;
+	private ProductCategory category;
 
 }

@@ -1,7 +1,10 @@
 package com.retail.ecommerce.serviceimpl;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.retail.ecommerce.entity.Image;
+import com.retail.ecommerce.entity.Product;
 import com.retail.ecommerce.enums.ImageTypes;
 import com.retail.ecommerce.exception.AccessTokenExpireException;
 import com.retail.ecommerce.exception.CoverImageallreadyAddedException;
@@ -23,9 +27,18 @@ import com.retail.ecommerce.repository.ImageMongodbRepository;
 import com.retail.ecommerce.repository.ProductRepository;
 import com.retail.ecommerce.repository.SellerRepository;
 import com.retail.ecommerce.repository.UserRegisterRepoository;
+import com.retail.ecommerce.requestdto.SearchFilter;
+import com.retail.ecommerce.responsedto.ProductResponse;
 import com.retail.ecommerce.service.Imageservice;
 import com.retail.ecommerce.util.ResponseStructure;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import lombok.AllArgsConstructor;
 
 @Service
