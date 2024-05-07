@@ -2,6 +2,7 @@ package com.retail.ecommerce.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -17,9 +18,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.retail.ecommerce.jwt.JwtFilter;
 import com.retail.ecommerce.jwt.JwtService;
+import com.retail.ecommerce.jwt.RefreshFilter;
 import com.retail.ecommerce.repository.AccessTokenRepo;
 import com.retail.ecommerce.repository.RefreshTokenRepo;
 
+import ch.qos.logback.core.boolex.Matcher;
 import lombok.AllArgsConstructor;
 
 @Configuration
@@ -48,19 +51,51 @@ public class SecurityConfig {
 	}
 
 	@Bean
+	@Order(2)
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
+		System.out.println("im in Main  filter*****************************");
 		return http.csrf(csrf -> csrf.disable())
 				.authorizeHttpRequests(
-						auth -> auth.requestMatchers("/api/v1/user/register", "/api/v1/login", "/api/v1/verify-email","/api/v1/login/refresh")
+						auth -> auth.requestMatchers("/api/v1/user/register", "/api/v1/login", "/api/v1/verify-email")
 								.permitAll().anyRequest().authenticated())
 				.sessionManagement(management -> {
 					management.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-				}).authenticationProvider(authenticationProvider())
+				})
 				.addFilterBefore(new JwtFilter(jwtService, accessTokenRepo, refreshTokenRepo),
 						UsernamePasswordAuthenticationFilter.class)
-				.build();
+				.authenticationProvider(authenticationProvider()).build();
 	}
+
+	@Bean
+	@Order(1)
+	SecurityFilterChain refreshFilterChain(HttpSecurity http) throws Exception {
+
+		System.out.println("im in refresh filter*****************************");
+		return http.csrf(csrf -> csrf.disable())
+				.securityMatchers(matcher -> matcher.requestMatchers("/api/v1/login/refresh/**"))
+				.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+				.sessionManagement(session -> {
+					session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+				})
+				.addFilterBefore(new RefreshFilter(jwtService, refreshTokenRepo),
+						UsernamePasswordAuthenticationFilter.class)
+				.authenticationProvider(authenticationProvider()).build();
+	}
+
+//	@Bean
+//	@Order(3)
+//	SecurityFilterChain fileterChain(HttpSecurity httpSecurity) throws Exception {
+//		System.out.println("im in Last filter*****************************");
+//		return httpSecurity.csrf(csrf -> csrf.disable())
+//				.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+//				.sessionManagement(session -> {
+//					session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+//				})
+//				.addFilterBefore(new JwtFilter(jwtService, accessTokenRepo, refreshTokenRepo),
+//						UsernamePasswordAuthenticationFilter.class)
+//				.authenticationProvider(authenticationProvider()).build();
+//
+//	}
 
 	@Bean
 	AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
