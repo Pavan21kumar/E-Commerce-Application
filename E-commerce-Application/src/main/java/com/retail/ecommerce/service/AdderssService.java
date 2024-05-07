@@ -1,10 +1,12 @@
 package com.retail.ecommerce.service;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 
 import com.retail.ecommerce.enums.UserRole;
 import com.retail.ecommerce.requestdto.AddressRequest;
-import com.retail.ecommerce.responsedto.AddressContactsResponse;
+import com.retail.ecommerce.responsedto.AddressContactResponse;
 import com.retail.ecommerce.responsedto.AddressResponse;
 import com.retail.ecommerce.responsedto.AddressSellerResponse;
 import com.retail.ecommerce.responsedto.AddressUpdateResponse;
@@ -21,6 +23,6 @@ public interface AdderssService {
 	ResponseEntity<ResponseStructure<AddressUpdateResponse>> updateAddress(@Valid AddressRequest addressRequest,
 			int addressId);
 
-	ResponseEntity<ResponseStructure<AddressContactsResponse>> findCustomerAddress(UserRole role);
+	ResponseEntity<ResponseStructure<List<AddressContactResponse>>> findCustomerAddress(UserRole role);
 
 }

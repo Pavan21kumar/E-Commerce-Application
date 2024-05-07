@@ -1,5 +1,7 @@
 package com.retail.ecommerce.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.retail.ecommerce.enums.UserRole;
 import com.retail.ecommerce.requestdto.AddressRequest;
-import com.retail.ecommerce.responsedto.AddressContactsResponse;
+import com.retail.ecommerce.responsedto.AddressContactResponse;
 import com.retail.ecommerce.responsedto.AddressResponse;
 import com.retail.ecommerce.responsedto.AddressSellerResponse;
 import com.retail.ecommerce.responsedto.AddressUpdateResponse;
@@ -43,7 +45,8 @@ public class AddressController {
 	}
 
 	@GetMapping("/{role}/findCustomerAddress")
-	public ResponseEntity<ResponseStructure<AddressContactsResponse>> findCustomerAddress(@PathVariable UserRole role) {
+	public ResponseEntity<ResponseStructure<List<AddressContactResponse>>> findCustomerAddress(
+			@PathVariable UserRole role) {
 		return addressservice.findCustomerAddress(role);
 	}
 

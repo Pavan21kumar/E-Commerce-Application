@@ -1,0 +1,6 @@
+package com.retail.ecommerce.enums;
+
+public enum ProductCategory {
+//		0			1		2		3		4			5	6	7			8		9		10		11		12		13
+		LAPTOPS,MOBILES,HEARPHONES,FRIDGE,TELIVISIONS,AC,BOOKS,DESKTOPS,CAMERAS,KEYBOARDS,MOUSES,CHARGERS,BAGS,PRINTERS
+}

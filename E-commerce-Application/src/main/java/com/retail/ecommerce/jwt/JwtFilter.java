@@ -22,7 +22,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 
-@Component
 @AllArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
@@ -36,6 +35,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
 		String at = null;
 		String rt = null;
+		System.out.println("inside Jwt Filter..............................");
 		if (request.getCookies() != null) {
 			for (Cookie c : request.getCookies()) {
 				if (c.getName().equals("at")) {
@@ -48,14 +48,16 @@ public class JwtFilter extends OncePerRequestFilter {
 			}
 		}
 		if (at != null && rt != null) {
+			System.out.println("fileter is executing...");
 			if (accessTokenRepo.existsByTokenAndIsBlocked(at, true)
 					&& refreshTokenRepo.existsByTokenAndIsBlocked(rt, true))
 				throw new InvalidCreadentials("invalid Creadentials  please enter Correct Details....");
 
+			System.out.println("inside.................. Both Present....");
 			String userName = jwtService.getUserName(at);
 			String role = jwtService.getRole(at);
 			if (userName != null && SecurityContextHolder.getContext().getAuthentication() == null && role != null) {
-
+				System.out.println("setting Authentication.......................");
 				UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userName, null,
 						Collections.singleton(new SimpleGrantedAuthority(role)));
 				token.setDetails(new WebAuthenticationDetails(request));
@@ -65,7 +67,9 @@ public class JwtFilter extends OncePerRequestFilter {
 			}
 
 		}
+
 		try {
+			System.out.println("end of the Code................");
 			filterChain.doFilter(request, response);
 		} catch (ExpiredJwtException e) {
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, " JWT token Expaired..");
