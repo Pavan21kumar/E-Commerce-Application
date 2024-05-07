@@ -3,6 +3,7 @@ package com.retail.ecommerce.serviceimpl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -50,6 +51,7 @@ public class ImgaeServiceImpl implements Imageservice {
 	private ResponseStructure<String> imageStructure;
 	private UserRegisterRepoository userRepo;
 	private SellerRepository sellerRepo;
+	private ResponseStructure<ProductResponse> responseStructure;
 
 	@Override
 	public ResponseEntity<ResponseStructure<String>> addImage(int productId, String imageType, MultipartFile images) {
@@ -117,6 +119,52 @@ public class ImgaeServiceImpl implements Imageservice {
 
 		}).orElseThrow(() -> new AccessTokenExpireException("accesstoken Is Expired..please regenerate.."));
 
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<ProductResponse>> getImagesByProductId(int productId) {
+
+		return productRepo.findById(productId).map(product -> {
+			System.out.println("inside...method.....");
+			List<Image> images = imageRepo.findByProductIdAndImageTypes(productId, ImageTypes.OTHER);
+			Image cover = null;
+			Optional<Image> image = imageRepo.findByImageTypesAndProductId(ImageTypes.COVER, productId);
+			if (image.isPresent()) {
+				cover = image.get();
+			}
+
+			return ResponseEntity.status(HttpStatus.FOUND.value())
+					.body(responseStructure.setStatusCode(HttpStatus.FOUND.value()).setMessage("data found...")
+							.setData(MapToProductResponse(product, images, cover)));
+
+		}).orElseThrow(() -> new ProductIsNotFoundException(""));
+	}
+
+	private ProductResponse MapToProductResponse(Product product, List<Image> images, Image coverImage) {
+
+		return ProductResponse.builder().productId(product.getProductId()).productName(product.getProductName())
+				.price(product.getPrice()).quantity(product.getQuantity()).category(product.getCategory())
+				.status(product.getStatus()).description(product.getDescription())
+				.coverImage(mapToCoverImage(coverImage)).immagesLinks(mapToOtherImages(images)).build();
+
+	}
+
+	private List<String> mapToOtherImages(List<Image> images) {
+		if (images.isEmpty())
+			return null;
+		List<String> list = new ArrayList<>();
+		for (Image link : images) {
+
+			list.add("/api/v1/images/" + link.getImageId());
+		}
+		return list;
+	}
+
+	private String mapToCoverImage(Image coverImage) {
+		if (coverImage == null)
+			return null;
+
+		return "/api/v1/images/" + coverImage.getImageId();
 	}
 
 }

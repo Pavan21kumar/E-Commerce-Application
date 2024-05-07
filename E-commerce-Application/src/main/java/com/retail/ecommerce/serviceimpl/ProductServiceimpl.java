@@ -3,6 +3,7 @@ package com.retail.ecommerce.serviceimpl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -11,13 +12,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.retail.ecommerce.entity.Image;
 import com.retail.ecommerce.entity.Product;
 import com.retail.ecommerce.entity.Seller;
 import com.retail.ecommerce.enums.AvailabilityStatus;
+import com.retail.ecommerce.enums.ImageTypes;
 import com.retail.ecommerce.enums.ProductCategory;
 import com.retail.ecommerce.exception.AccessTokenExpireException;
 import com.retail.ecommerce.exception.ProductIsNotFoundException;
 import com.retail.ecommerce.exception.UserIsNotLoginException;
+import com.retail.ecommerce.repository.ImageMongodbRepository;
 import com.retail.ecommerce.repository.ProductRepository;
 import com.retail.ecommerce.repository.SellerRepository;
 import com.retail.ecommerce.repository.UserRegisterRepoository;
@@ -45,7 +49,7 @@ public class ProductServiceimpl implements ProductService {
 	private SellerRepository sellerRepo;
 	private ResponseStructure<ProductResponse> productResponse;
 	private ResponseStructure<List<ProductResponse>> listProductResponses;
-
+	private ImageMongodbRepository imageRepo;
 	@PersistenceContext
 	private EntityManager em;
 
@@ -142,7 +146,7 @@ public class ProductServiceimpl implements ProductService {
 
 		return productRepo.findById(productId).map(product -> {
 			return ResponseEntity.status(HttpStatus.FOUND).body(productResponse.setStatusCode(HttpStatus.FOUND.value())
-					.setMessage("Product Is Found..").setData(MapToProductResponse(product)));
+					.setMessage("Product Is Found..").setData(mapToProductResponse(product)));
 		}).orElseThrow(() -> new ProductIsNotFoundException("product Is Not Found........"));
 	}
 
@@ -166,9 +170,43 @@ public class ProductServiceimpl implements ProductService {
 	private List<ProductResponse> mapToListProducts(List<Product> resultList) {
 		List<ProductResponse> listProducts = new ArrayList<>();
 		for (Product product : resultList) {
-			listProducts.add(MapToProductResponse(product));
+			listProducts.add(mapToProductResponse(product));
 		}
 
 		return listProducts;
 	}
+
+	private ProductResponse mapToProductResponse(Product product) {
+
+		List<Image> images = imageRepo.findByProductIdAndImageTypes(product.getProductId(), ImageTypes.OTHER);
+		Image cover = null;
+		Optional<Image> image = imageRepo.findByImageTypesAndProductId(ImageTypes.COVER, product.getProductId());
+		if (image.isPresent()) {
+			cover = image.get();
+		}
+		return ProductResponse.builder().productId(product.getProductId()).productName(product.getProductName())
+				.description(product.getDescription()).category(product.getCategory())
+				.coverImage(mapToCoverImage(cover)).immagesLinks(mapToOtherImages(images)).status(product.getStatus())
+				.build();
+
+	}
+
+	private List<String> mapToOtherImages(List<Image> images) {
+		if (images.isEmpty())
+			return null;
+		List<String> list = new ArrayList<>();
+		for (Image link : images) {
+
+			list.add("/api/v1/images/" + link.getImageId());
+		}
+		return list;
+	}
+
+	private String mapToCoverImage(Image coverImage) {
+		if (coverImage == null)
+			return null;
+
+		return "/api/v1/images/" + coverImage.getImageId();
+	}
+
 }

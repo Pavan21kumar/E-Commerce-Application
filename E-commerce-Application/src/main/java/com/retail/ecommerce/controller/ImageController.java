@@ -1,7 +1,5 @@
 package com.retail.ecommerce.controller;
 
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,10 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.retail.ecommerce.requestdto.SearchFilter;
 import com.retail.ecommerce.responsedto.ProductResponse;
 import com.retail.ecommerce.service.Imageservice;
-import com.retail.ecommerce.serviceimpl.ProductSpecification;
 import com.retail.ecommerce.util.ResponseStructure;
 
 import lombok.AllArgsConstructor;
@@ -33,9 +29,15 @@ public class ImageController {
 		return imageService.addImage(productId, imageType, images);
 	}
 
-	@GetMapping("/{imageId}/images")
+	@GetMapping("/images/{imageId}")
 	public ResponseEntity<byte[]> getImageById(@PathVariable String imageId, MultipartFile images) {
 		return imageService.findImage(imageId);
+	}
+
+	@GetMapping("/products/{productId}/images")
+	public ResponseEntity<ResponseStructure<ProductResponse>> getImagesByProductId(@PathVariable int productId) {
+
+		return imageService.getImagesByProductId(productId);
 	}
 
 }
