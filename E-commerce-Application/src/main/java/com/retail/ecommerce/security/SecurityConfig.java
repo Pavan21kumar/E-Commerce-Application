@@ -55,9 +55,8 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		System.out.println("im in Main  filter*****************************");
 		return http.csrf(csrf -> csrf.disable())
-				.authorizeHttpRequests(
-						auth -> auth.requestMatchers("/api/v1/user/register", "/api/v1/login", "/api/v1/verify-email")
-								.permitAll().anyRequest().authenticated())
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/user/register", "/api/v1/login",
+						"/api/v1/verify-email", "/api/v1/fetchCategories").permitAll().anyRequest().authenticated())
 				.sessionManagement(management -> {
 					management.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 				})
@@ -81,21 +80,6 @@ public class SecurityConfig {
 						UsernamePasswordAuthenticationFilter.class)
 				.authenticationProvider(authenticationProvider()).build();
 	}
-
-//	@Bean
-//	@Order(3)
-//	SecurityFilterChain fileterChain(HttpSecurity httpSecurity) throws Exception {
-//		System.out.println("im in Last filter*****************************");
-//		return httpSecurity.csrf(csrf -> csrf.disable())
-//				.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
-//				.sessionManagement(session -> {
-//					session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-//				})
-//				.addFilterBefore(new JwtFilter(jwtService, accessTokenRepo, refreshTokenRepo),
-//						UsernamePasswordAuthenticationFilter.class)
-//				.authenticationProvider(authenticationProvider()).build();
-//
-//	}
 
 	@Bean
 	AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {

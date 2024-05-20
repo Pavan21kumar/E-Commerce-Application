@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 
+import com.retail.ecommerce.enums.ProductCategory;
 import com.retail.ecommerce.requestdto.ProductRequest;
 import com.retail.ecommerce.requestdto.SearchFilter;
 import com.retail.ecommerce.responsedto.ProductResponse;
@@ -18,5 +19,7 @@ public interface ProductService {
 	ResponseEntity<ResponseStructure<ProductResponse>> findProduct(int productId);
 
 	ResponseEntity<ResponseStructure<List<ProductResponse>>> getProducts(SearchFilter filters);
+
+	ResponseEntity<ResponseStructure<ProductCategory[]>> fetchAllCategories();
 
 }

@@ -39,6 +39,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.AllArgsConstructor;
+import lombok.val;
 
 @Service
 @AllArgsConstructor
@@ -52,6 +53,7 @@ public class ProductServiceimpl implements ProductService {
 	private ImageMongodbRepository imageRepo;
 	@PersistenceContext
 	private EntityManager em;
+	private ResponseStructure<ProductCategory[]> allCategories;
 
 	@Override
 	public ResponseEntity<ResponseStructure<ProductResponse>> addProduct(ProductRequest productRequest) {
@@ -178,7 +180,7 @@ public class ProductServiceimpl implements ProductService {
 
 	private ProductResponse mapToProductResponse(Product product) {
 
-		List<Image> images = imageRepo.findByProductIdAndImageTypes(product.getProductId(), ImageTypes.OTHER);
+		List<Image> imageids = imageRepo.findByProductIdAndImageTypes(product.getProductId(), ImageTypes.OTHER);
 		Image cover = null;
 		Optional<Image> image = imageRepo.findByImageTypesAndProductId(ImageTypes.COVER, product.getProductId());
 		if (image.isPresent()) {
@@ -186,7 +188,7 @@ public class ProductServiceimpl implements ProductService {
 		}
 		return ProductResponse.builder().productId(product.getProductId()).productName(product.getProductName())
 				.description(product.getDescription()).category(product.getCategory())
-				.coverImage(mapToCoverImage(cover)).immagesLinks(mapToOtherImages(images)).status(product.getStatus())
+				.coverImage(mapToCoverImage(cover)).immagesLinks(mapToOtherImages(imageids)).status(product.getStatus())
 				.build();
 
 	}
@@ -207,6 +209,15 @@ public class ProductServiceimpl implements ProductService {
 			return null;
 
 		return "/api/v1/images/" + coverImage.getImageId();
+	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<ProductCategory[]>> fetchAllCategories() {
+
+		return ResponseEntity.status(HttpStatus.FOUND.value())
+				.body(allCategories.setStatusCode(HttpStatus.FOUND.value()).setMessage("categoties are Found.....")
+						.setData(ProductCategory.values()));
+
 	}
 
 }

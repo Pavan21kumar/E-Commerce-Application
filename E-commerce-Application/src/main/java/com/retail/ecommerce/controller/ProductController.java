@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.retail.ecommerce.enums.ProductCategory;
 import com.retail.ecommerce.requestdto.ProductRequest;
 import com.retail.ecommerce.requestdto.SearchFilter;
 import com.retail.ecommerce.responsedto.ProductResponse;
@@ -35,17 +36,20 @@ public class ProductController {
 			@Valid @RequestBody ProductRequest productRequest) {
 		return productService.addProduct(productRequest);
 	}
-	
+
 	@PreAuthorize("hasAuthority('SELLER')")
 	@PutMapping("/{productId}/products")
-	public ResponseEntity<ResponseStructure<ProductResponse>> updateProduct(@RequestBody ProductRequest productRequest,@PathVariable int productId){
-		return productService.updateProduct(productRequest,productId);
+	public ResponseEntity<ResponseStructure<ProductResponse>> updateProduct(@RequestBody ProductRequest productRequest,
+			@PathVariable int productId) {
+		return productService.updateProduct(productRequest, productId);
 	}
+
 	@GetMapping("/{productId}/products")
-	public ResponseEntity<ResponseStructure<ProductResponse>> findProduct(@PathVariable int productId){
-		
+	public ResponseEntity<ResponseStructure<ProductResponse>> findProduct(@PathVariable int productId) {
+
 		return productService.findProduct(productId);
 	}
+
 	@GetMapping("/filter")
 	public ResponseEntity<ResponseStructure<List<ProductResponse>>> checkFilter(SearchFilter filters) {
 
@@ -53,6 +57,12 @@ public class ProductController {
 		System.out.println(new ProductSpecification(filters).buildSpecification().toString());
 		return productService.getProducts(filters);
 
+	}
+
+	@GetMapping("/fetchCategories")
+	public ResponseEntity<ResponseStructure<ProductCategory[]>> fetchAllCategory() {
+
+		return productService.fetchAllCategories();
 	}
 
 }

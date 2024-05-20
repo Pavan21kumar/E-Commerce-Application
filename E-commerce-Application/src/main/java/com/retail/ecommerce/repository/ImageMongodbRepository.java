@@ -14,6 +14,6 @@ public interface ImageMongodbRepository extends MongoRepository<Image, String> {
 
 	Optional<Image> findByImageTypesAndProductId(ImageTypes othe, int productId);
 
-	List<Image> findByProductIdAndImageTypes(int productId, ImageTypes other);
+	 List<Image> findByProductIdAndImageTypes(int productId, ImageTypes other);
 
 }
